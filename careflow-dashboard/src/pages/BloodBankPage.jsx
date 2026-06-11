@@ -1,397 +1,158 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Droplets, AlertTriangle, Plus, UserPlus, CheckCircle, XCircle, Trash2, Mail, Phone, Calendar, Search, Filter } from "lucide-react";
+import { useNotifications } from "@/context/NotificationContext";
+import { useTranslation } from "react-i18next";
+import {
+  Droplets, Search, Plus, HeartPulse, Activity, AlertCircle, Phone, X
+} from "lucide-react";
 
-const initialBloodGroups = [
-  { type: "A+", units: 45, status: "normal" },
-  { type: "A-", units: 12, status: "low" },
-  { type: "B+", units: 38, status: "normal" },
-  { type: "B-", units: 8, status: "critical" },
-  { type: "AB+", units: 22, status: "normal" },
-  { type: "AB-", units: 5, status: "critical" },
-  { type: "O+", units: 52, status: "normal" },
-  { type: "O-", units: 15, status: "low" },
+const initialBloodStock = [
+  { id: 1, type: "O+", units: 45, status: "Healthy", lastUpdated: "10 mins ago" },
+  { id: 2, type: "A+", units: 32, status: "Healthy", lastUpdated: "1 hour ago" },
+  { id: 3, type: "B+", units: 12, status: "Low", lastUpdated: "5 mins ago" },
+  { id: 4, type: "AB+", units: 5, status: "Critical", lastUpdated: "Just now" },
+  { id: 5, type: "O-", units: 8, status: "Critical", lastUpdated: "30 mins ago" },
+  { id: 6, type: "A-", units: 15, status: "Low", lastUpdated: "2 hours ago" },
+  { id: 7, type: "B-", units: 22, status: "Healthy", lastUpdated: "1 day ago" },
+  { id: 8, type: "AB-", units: 2, status: "Critical", lastUpdated: "Just now" },
 ];
 
-const statusStyles = {
-  normal: { bg: "bg-[hsl(145_65%_92%)]", text: "text-[hsl(145_65%_30%)]", label: "Adequate" },
-  low: { bg: "bg-[hsl(38_92%_92%)]", text: "text-[hsl(38_80%_30%)]", label: "Low Stock" },
-  critical: { bg: "bg-[hsl(0_72%_92%)]", text: "text-[hsl(0_72%_40%)]", label: "Critical" },
-};
-
 const BloodBankPage = () => {
-  const [bloodGroups, setBloodGroups] = useState(initialBloodGroups);
-  const [donors, setDonors] = useState([
-    { id: 1, name: "John Doe", bloodGroup: "A+", phone: "+1234567890", email: "john@example.com", lastDonation: "2024-01-15", status: "active" },
-    { id: 2, name: "Jane Smith", bloodGroup: "O-", phone: "+1234567891", email: "jane@example.com", lastDonation: "2024-02-20", status: "active" },
-    { id: 3, name: "Mike Johnson", bloodGroup: "B+", phone: "+1234567892", email: "mike@example.com", lastDonation: "2024-03-10", status: "active" },
-  ]);
-  
-  const [emergencyRequests, setEmergencyRequests] = useState([]);
-  const [showDonorModal, setShowDonorModal] = useState(false);
-  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState("success");
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  
-  // Form states
-  const [donorForm, setDonorForm] = useState({
-    name: "",
-    bloodGroup: "",
-    phone: "",
-    email: "",
-    lastDonation: "",
-  });
-  
-  const [emergencyForm, setEmergencyForm] = useState({
-    patientName: "",
-    bloodGroup: "",
-    hospital: "",
-    requiredUnits: "",
-    contactPerson: "",
-    contactNumber: "",
-    urgency: "high",
+  const { push } = useNotifications();
+  const { t } = useTranslation();
+  const [stock, setStock] = useState(initialBloodStock);
+  const [search, setSearch] = useState("");
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [donors, setDonors] = useState([]);
+  const [newDonor, setNewDonor] = useState({
+    name: "", group: "A+", lastDonation: "", phone: "", status: "Eligible"
   });
 
-  const showToastMessage = (message, type = "success") => {
-    setToastMessage(message);
-    setToastType(type);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
-  };
+  const filtered = stock.filter(s => s.type.toLowerCase().includes(search.toLowerCase()));
 
-  const updateBloodStock = (bloodGroup, units) => {
-    setBloodGroups(prev => prev.map(bg => {
-      if (bg.type === bloodGroup) {
-        const newUnits = bg.units - units;
-        let newStatus = bg.status;
-        if (newUnits <= 5) newStatus = "critical";
-        else if (newUnits <= 15) newStatus = "low";
-        else newStatus = "normal";
-        return { ...bg, units: newUnits, status: newStatus };
-      }
-      return bg;
-    }));
-  };
-
-  const handleAddDonor = () => {
-    if (!donorForm.name || !donorForm.bloodGroup || !donorForm.phone) {
-      showToastMessage("Please fill all required fields!", "error");
-      return;
-    }
-
-    const newDonor = {
-      id: Date.now(),
-      ...donorForm,
-      status: "active",
-      lastDonation: donorForm.lastDonation || new Date().toISOString().split('T')[0],
-    };
-
-    setDonors([...donors, newDonor]);
-    
-    // Add blood units from donor
-    updateBloodStock(donorForm.bloodGroup, -1); // Negative to add units
-    setBloodGroups(prev => prev.map(bg => {
-      if (bg.type === donorForm.bloodGroup) {
-        const newUnits = bg.units + 1;
-        let newStatus = bg.status;
-        if (newUnits > 15) newStatus = "normal";
-        else if (newUnits > 5) newStatus = "low";
-        else newStatus = "critical";
-        return { ...bg, units: newUnits, status: newStatus };
-      }
-      return bg;
-    }));
-
-    setDonorForm({ name: "", bloodGroup: "", phone: "", email: "", lastDonation: "" });
-    setShowDonorModal(false);
-    showToastMessage(`Donor ${donorForm.name} registered successfully! +1 unit of ${donorForm.bloodGroup} added.`);
-  };
-
-  const handleEmergencyRequest = () => {
-    if (!emergencyForm.patientName || !emergencyForm.bloodGroup || !emergencyForm.requiredUnits) {
-      showToastMessage("Please fill all required fields!", "error");
-      return;
-    }
-
-    const bloodGroupStock = bloodGroups.find(bg => bg.type === emergencyForm.bloodGroup);
-    
-    if (!bloodGroupStock || bloodGroupStock.units < parseInt(emergencyForm.requiredUnits)) {
-      showToastMessage(`Insufficient stock for ${emergencyForm.bloodGroup}! Available: ${bloodGroupStock?.units || 0} units`, "error");
-      return;
-    }
-
-    const newRequest = {
-      id: Date.now(),
-      ...emergencyForm,
-      requiredUnits: parseInt(emergencyForm.requiredUnits),
-      status: "pending",
-      requestTime: new Date().toLocaleString(),
-    };
-
-    setEmergencyRequests([newRequest, ...emergencyRequests]);
-    updateBloodStock(emergencyForm.bloodGroup, parseInt(emergencyForm.requiredUnits));
-    
-    setEmergencyForm({ patientName: "", bloodGroup: "", hospital: "", requiredUnits: "", contactPerson: "", contactNumber: "", urgency: "high" });
-    setShowEmergencyModal(false);
-    showToastMessage(`Emergency request for ${emergencyForm.patientName} submitted successfully!`);
-  };
-
-  const handleRequestAction = (requestId, action) => {
-    if (action === "fulfill") {
-      setEmergencyRequests(prev => prev.map(req => 
-        req.id === requestId ? { ...req, status: "fulfilled" } : req
-      ));
-      showToastMessage("Request marked as fulfilled", "success");
-    } else if (action === "cancel") {
-      // Return blood units to stock when cancelling pending request
-      const request = emergencyRequests.find(req => req.id === requestId);
-      if (request && request.status === "pending") {
-        setBloodGroups(prev => prev.map(bg => {
-          if (bg.type === request.bloodGroup) {
-            const newUnits = bg.units + request.requiredUnits;
-            let newStatus = bg.status;
-            if (newUnits > 15) newStatus = "normal";
-            else if (newUnits > 5) newStatus = "low";
-            else newStatus = "critical";
-            return { ...bg, units: newUnits, status: newStatus };
-          }
-          return bg;
-        }));
-      }
-      setEmergencyRequests(prev => prev.filter(req => req.id !== requestId));
-      showToastMessage("Request cancelled", "info");
-    }
-  };
-
-  const deleteDonor = (donorId) => {
-    setDonors(prev => prev.filter(donor => donor.id !== donorId));
-    showToastMessage("Donor removed from database", "info");
-  };
-
-  const getUrgencyColor = (urgency) => {
-    switch(urgency) {
-      case "high": return "bg-red-100 text-red-700";
-      case "medium": return "bg-yellow-100 text-yellow-700";
-      default: return "bg-blue-100 text-blue-700";
-    }
+  const handleRequest = (type) => {
+    push("blood", "Emergency Blood Request", `Requested 5 units of ${type} blood from central bank.`);
+    alert(`Emergency request for ${type} sent!`);
   };
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Toast Notification */}
-        {showToast && (
-          <div className="fixed top-20 right-4 z-50 animate-slide-in-right">
-            <div className={`rounded-lg shadow-lg p-4 flex items-center gap-3 border-l-4 ${
-              toastType === "success" ? "bg-white dark:bg-gray-800 border-green-500" :
-              toastType === "error" ? "bg-white dark:bg-gray-800 border-red-500" :
-              "bg-white dark:bg-gray-800 border-blue-500"
-            }`}>
-              {toastType === "success" && <CheckCircle className="w-5 h-5 text-green-500" />}
-              {toastType === "error" && <AlertTriangle className="w-5 h-5 text-red-500" />}
-              {toastType === "info" && <XCircle className="w-5 h-5 text-blue-500" />}
-              <div className="flex-1">
-                <p className="text-sm text-foreground">{toastMessage}</p>
-              </div>
-              <button onClick={() => setShowToast(false)} className="text-muted-foreground hover:text-foreground">
-                <XCircle className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Donor Registration Modal */}
-        {showDonorModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in" onClick={() => setShowDonorModal(false)}>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 animate-scale-up" onClick={e => e.stopPropagation()}>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Register New Donor</h3>
-                <button onClick={() => setShowDonorModal(false)} className="text-muted-foreground hover:text-foreground">
-                  <XCircle className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                <input type="text" placeholder="Full Name *" value={donorForm.name} onChange={e => setDonorForm({...donorForm, name: e.target.value})} className="w-full px-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                <select value={donorForm.bloodGroup} onChange={e => setDonorForm({...donorForm, bloodGroup: e.target.value})} className="w-full px-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                  <option value="">Select Blood Group *</option>
-                  {bloodGroups.map(bg => <option key={bg.type} value={bg.type}>{bg.type}</option>)}
-                </select>
-                <input type="tel" placeholder="Phone Number *" value={donorForm.phone} onChange={e => setDonorForm({...donorForm, phone: e.target.value})} className="w-full px-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                <input type="email" placeholder="Email" value={donorForm.email} onChange={e => setDonorForm({...donorForm, email: e.target.value})} className="w-full px-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                <input type="date" placeholder="Last Donation Date" value={donorForm.lastDonation} onChange={e => setDonorForm({...donorForm, lastDonation: e.target.value})} className="w-full px-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button onClick={handleAddDonor} className="flex-1 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90">Register Donor</button>
-                <button onClick={() => setShowDonorModal(false)} className="flex-1 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-accent">Cancel</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Emergency Request Modal */}
-        {showEmergencyModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in" onClick={() => setShowEmergencyModal(false)}>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 animate-scale-up" onClick={e => e.stopPropagation()}>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-destructive" /> Emergency Blood Request
-                </h3>
-                <button onClick={() => setShowEmergencyModal(false)} className="text-muted-foreground hover:text-foreground">
-                  <XCircle className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                <input type="text" placeholder="Patient Name *" value={emergencyForm.patientName} onChange={e => setEmergencyForm({...emergencyForm, patientName: e.target.value})} className="w-full px-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                <select value={emergencyForm.bloodGroup} onChange={e => setEmergencyForm({...emergencyForm, bloodGroup: e.target.value})} className="w-full px-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                  <option value="">Select Blood Group *</option>
-                  {bloodGroups.map(bg => <option key={bg.type} value={bg.type}>{bg.type} ({bg.units} units available)</option>)}
-                </select>
-                <input type="number" placeholder="Required Units *" value={emergencyForm.requiredUnits} onChange={e => setEmergencyForm({...emergencyForm, requiredUnits: e.target.value})} className="w-full px-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                <input type="text" placeholder="Hospital Name" value={emergencyForm.hospital} onChange={e => setEmergencyForm({...emergencyForm, hospital: e.target.value})} className="w-full px-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                <input type="text" placeholder="Contact Person" value={emergencyForm.contactPerson} onChange={e => setEmergencyForm({...emergencyForm, contactPerson: e.target.value})} className="w-full px-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                <input type="tel" placeholder="Contact Number" value={emergencyForm.contactNumber} onChange={e => setEmergencyForm({...emergencyForm, contactNumber: e.target.value})} className="w-full px-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                <select value={emergencyForm.urgency} onChange={e => setEmergencyForm({...emergencyForm, urgency: e.target.value})} className="w-full px-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                  <option value="high">High Urgency</option>
-                  <option value="medium">Medium Urgency</option>
-                  <option value="low">Low Urgency</option>
-                </select>
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button onClick={handleEmergencyRequest} className="flex-1 py-2 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium hover:opacity-90">Submit Request</button>
-                <button onClick={() => setShowEmergencyModal(false)} className="flex-1 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-accent">Cancel</button>
-              </div>
-            </div>
-          </div>
-        )}
-
+      <div className="space-y-6 max-w-7xl mx-auto pb-10">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="page-header">Blood Bank</h1>
-            <p className="page-subtitle">Manage blood inventory and requests</p>
-          </div>
-          <div className="flex gap-3">
-            <button onClick={() => setShowDonorModal(true)} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
-              <UserPlus className="w-4 h-4" /> Register Donor
-            </button>
-            <button onClick={() => setShowEmergencyModal(true)} className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
-              <AlertTriangle className="w-4 h-4" /> Emergency Request
-            </button>
-          </div>
-        </div>
-
-        {/* Blood Stock Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {bloodGroups.map((bg) => {
-            const style = statusStyles[bg.status];
-            return (
-              <div key={bg.type} className="stat-card animate-slide-up text-center">
-                <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-3">
-                  <span className="text-lg font-bold text-destructive">{bg.type}</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">{bg.units}</p>
-                <p className="text-xs text-muted-foreground mb-2">units available</p>
-                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${style.bg} ${style.text}`}>
-                  {bg.status !== "normal" && <AlertTriangle className="w-3 h-3" />}
-                  {style.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Donors List */}
-        <div className="dashboard-section animate-slide-up">
-          <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-            <UserPlus className="w-4 h-4" /> Registered Donors ({donors.length})
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b border-border">
-                <tr className="text-left text-muted-foreground">
-                  <th className="pb-2 font-medium">Name</th>
-                  <th className="pb-2 font-medium">Blood Group</th>
-                  <th className="pb-2 font-medium">Phone</th>
-                  <th className="pb-2 font-medium">Last Donation</th>
-                  <th className="pb-2 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {donors.map(donor => (
-                  <tr key={donor.id} className="border-b border-border">
-                    <td className="py-3">{donor.name}</td>
-                    <td className="py-3"><span className="px-2 py-1 bg-destructive/10 text-destructive rounded text-xs font-semibold">{donor.bloodGroup}</span></td>
-                    <td className="py-3">{donor.phone}</td>
-                    <td className="py-3">{donor.lastDonation}</td>
-                    <td className="py-3">
-                      <button onClick={() => deleteDonor(donor.id)} className="text-red-500 hover:text-red-700">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Emergency Requests */}
-        {emergencyRequests.length > 0 && (
-          <div className="dashboard-section animate-slide-up">
-            <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-destructive" /> Emergency Requests ({emergencyRequests.length})
-            </h3>
-            <div className="space-y-3">
-              {emergencyRequests.map(request => (
-                <div key={request.id} className="p-4 bg-card border border-border rounded-lg">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h4 className="font-semibold">{request.patientName}</h4>
-                      <p className="text-xs text-muted-foreground">Requested: {request.requestTime}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      {request.status === "pending" && (
-                        <>
-                          <button onClick={() => handleRequestAction(request.id, "fulfill")} className="px-3 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200">Mark Fulfilled</button>
-                          <button onClick={() => handleRequestAction(request.id, "cancel")} className="px-3 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">Cancel</button>
-                        </>
-                      )}
-                      {request.status === "fulfilled" && (
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded text-xs">Fulfilled</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><span className="text-muted-foreground">Blood Group:</span> {request.bloodGroup}</div>
-                    <div><span className="text-muted-foreground">Units:</span> {request.requiredUnits}</div>
-                    <div><span className="text-muted-foreground">Hospital:</span> {request.hospital || "N/A"}</div>
-                    <div><span className="text-muted-foreground">Contact:</span> {request.contactNumber || "N/A"}</div>
-                  </div>
-                </div>
-              ))}
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-rose-100 rounded-2xl">
+              <Droplets className="w-6 h-6 text-rose-600" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-gray-900">{t("nav.bloodBank")}</h1>
+              <p className="text-sm font-medium text-gray-500">Live monitoring of blood group availability</p>
             </div>
           </div>
-        )}
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 font-bold shadow-lg shadow-gray-200 transition-transform active:scale-95"
+          >
+            <Plus className="w-4 h-4" /> Register Donor
+          </button>
+        </div>
+
+        {/* Toolbar */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search blood group..."
+              className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-rose-500 shadow-sm"
+            />
+          </div>
+        </div>
+
+        {/* Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {filtered.map(item => (
+            <div key={item.id} className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-all p-6 flex flex-col items-center text-center">
+              <div className="relative mb-4">
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center border-4 
+                  ${item.status === 'Healthy' ? 'border-emerald-100 bg-emerald-50 text-emerald-600' : 
+                    item.status === 'Low' ? 'border-amber-100 bg-amber-50 text-amber-600' : 'border-rose-100 bg-rose-50 text-rose-600 animate-pulse'}`}>
+                  <Droplets className="w-8 h-8" />
+                </div>
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs font-black px-3 py-1 rounded-full shadow-md border-2 border-white">
+                  {item.type}
+                </div>
+              </div>
+              
+              <h3 className="text-4xl font-black text-gray-900 mb-1">{item.units}</h3>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Units Available</p>
+
+              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider w-full
+                  ${item.status === 'Healthy' ? 'bg-emerald-100 text-emerald-700' : 
+                    item.status === 'Low' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'}`}>
+                  {item.status} Status
+              </span>
+
+              {(item.status === "Critical" || item.status === "Low") && (
+                <button onClick={() => handleRequest(item.type)} className="w-full mt-4 py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-sm font-bold transition-colors">
+                  Request Stock
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
-      <style jsx>{`
-        @keyframes slide-in-right {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes scale-up {
-          from { transform: scale(0.9); opacity: 0; }
-          to { transform: scale(1); opacity: 1; }
-        }
-        .animate-slide-in-right { animation: slide-in-right 0.3s ease-out; }
-        .animate-fade-in { animation: fade-in 0.2s ease-out; }
-        .animate-scale-up { animation: scale-up 0.2s ease-out; }
-      `}</style>
+      {/* Add Donor Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl">
+            <div className="bg-gradient-to-r from-red-500 to-red-700 p-6 text-white flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-black">Register Donor</h2>
+                <p className="text-red-100 text-sm">Add a new blood donor to the database</p>
+              </div>
+              <button onClick={() => setShowAddModal(false)} className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setDonors([{
+                id: Date.now(),
+                ...newDonor
+              }, ...donors]);
+              setShowAddModal(false);
+              setNewDonor({ name: "", group: "A+", lastDonation: "", phone: "", status: "Eligible" });
+              push("blood", "Donor Registered", `${newDonor.name} has been added successfully.`);
+            }} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Donor Name</label>
+                <input required className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={newDonor.name} onChange={e=>setNewDonor({...newDonor, name: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Blood Group</label>
+                  <select required className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={newDonor.group} onChange={e=>setNewDonor({...newDonor, group: e.target.value})}>
+                    <option>A+</option><option>A-</option>
+                    <option>B+</option><option>B-</option>
+                    <option>AB+</option><option>AB-</option>
+                    <option>O+</option><option>O-</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Phone</label>
+                  <input required className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={newDonor.phone} onChange={e=>setNewDonor({...newDonor, phone: e.target.value})} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Last Donation Date</label>
+                <input type="date" required className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={newDonor.lastDonation} onChange={e=>setNewDonor({...newDonor, lastDonation: e.target.value})} />
+              </div>
+              <button type="submit" className="w-full py-3 mt-4 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg active:scale-95">Register</button>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

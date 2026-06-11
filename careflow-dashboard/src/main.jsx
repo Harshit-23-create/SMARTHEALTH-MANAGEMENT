@@ -4,9 +4,13 @@ import App from "./App.jsx";
 import "./index.css";
 import "leaflet/dist/leaflet.css";
 import "./utils/leafletFix";
+import "./i18n";
+import { NotificationProvider } from "./context/NotificationContext.jsx";
 
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>
-    <App />
+    <NotificationProvider>
+      <App />
+    </NotificationProvider>
   </BrowserRouter>
-);
+);

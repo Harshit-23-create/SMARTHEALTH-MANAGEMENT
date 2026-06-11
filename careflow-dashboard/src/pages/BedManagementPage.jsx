@@ -1,789 +1,303 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { useNotifications } from "@/context/NotificationContext";
+import { useTranslation } from "react-i18next";
 import {
-  Bed, RefreshCw, Search, Filter, Download,
-  AlertTriangle, Activity, Users, Clock,
+  Bed, RefreshCw, Search, Filter,
+  Activity, Users,
   TrendingUp, TrendingDown,
-  Edit, Eye, Archive,
-  Info, PieChart, BarChart3,
-  ArrowUpRight, ArrowDownRight, CheckCircle2,
-  XCircle, AlertCircle, X, Wrench, UserCheck
+  Edit, Plus, Check, MapPin, CheckCircle, X
 } from "lucide-react";
 
-const wards = [
-  {
-    id: 1,
-    name: "General Ward A",
-    total: 50,
-    available: 12,
-    occupied: 38,
-    status: "green",
-    department: "General Medicine",
-    headNurse: "Sarah Johnson",
-    occupancy: 76,
-    maintenance: 0,
-    lastUpdated: "2 min ago",
-    trend: "+3",
-  },
-  {
-    id: 2,
-    name: "General Ward B",
-    total: 50,
-    available: 5,
-    occupied: 45,
-    status: "yellow",
-    department: "General Medicine",
-    headNurse: "Michael Chen",
-    occupancy: 90,
-    maintenance: 0,
-    lastUpdated: "5 min ago",
-    trend: "-2",
-  },
-  {
-    id: 3,
-    name: "ICU",
-    total: 20,
-    available: 2,
-    occupied: 17,
-    status: "red",
-    department: "Critical Care",
-    headNurse: "Emily Williams",
-    occupancy: 85,
-    maintenance: 1,
-    lastUpdated: "1 min ago",
-    trend: "+1",
-  },
-  {
-    id: 4,
-    name: "Pediatric Ward",
-    total: 30,
-    available: 15,
-    occupied: 15,
-    status: "green",
-    department: "Pediatrics",
-    headNurse: "David Martinez",
-    occupancy: 50,
-    maintenance: 0,
-    lastUpdated: "10 min ago",
-    trend: "+5",
-  },
-  {
-    id: 5,
-    name: "Maternity Ward",
-    total: 25,
-    available: 8,
-    occupied: 16,
-    status: "green",
-    department: "Obstetrics",
-    headNurse: "Lisa Thompson",
-    occupancy: 64,
-    maintenance: 1,
-    lastUpdated: "3 min ago",
-    trend: "+2",
-  },
-  {
-    id: 6,
-    name: "Surgical Ward",
-    total: 40,
-    available: 3,
-    occupied: 35,
-    status: "red",
-    department: "Surgery",
-    headNurse: "Robert Garcia",
-    occupancy: 87.5,
-    maintenance: 2,
-    lastUpdated: "4 min ago",
-    trend: "-1",
-  },
-  {
-    id: 7,
-    name: "Orthopedic Ward",
-    total: 35,
-    available: 10,
-    occupied: 23,
-    status: "yellow",
-    department: "Orthopedics",
-    headNurse: "Patricia Brown",
-    occupancy: 65.7,
-    maintenance: 2,
-    lastUpdated: "7 min ago",
-    trend: "+4",
-  },
-  {
-    id: 8,
-    name: "Cardiac Care",
-    total: 15,
-    available: 1,
-    occupied: 13,
-    status: "red",
-    department: "Cardiology",
-    headNurse: "James Wilson",
-    occupancy: 86.7,
-    maintenance: 1,
-    lastUpdated: "2 min ago",
-    trend: "-3",
-  },
-  {
-    id: 9,
-    name: "Neurology Ward",
-    total: 20,
-    available: 7,
-    occupied: 12,
-    status: "green",
-    department: "Neurology",
-    headNurse: "Maria Rodriguez",
-    occupancy: 60,
-    maintenance: 1,
-    lastUpdated: "6 min ago",
-    trend: "+2",
-  },
+const initialWards = [
+  { id: 1, name: "General Ward A", total: 50, available: 12, occupied: 38, status: "green",  department: "General Medicine", headNurse: "Sarah Johnson", occupancy: 76, maintenance: 0, lastUpdated: "2 min ago", trend: "+3" },
+  { id: 2, name: "General Ward B", total: 50, available: 5,  occupied: 45, status: "yellow", department: "General Medicine", headNurse: "Michael Chen", occupancy: 90, maintenance: 0, lastUpdated: "5 min ago", trend: "-2" },
+  { id: 3, name: "ICU",            total: 20, available: 2,  occupied: 17, status: "red",    department: "Critical Care",    headNurse: "Emily Williams", occupancy: 85, maintenance: 1, lastUpdated: "1 min ago", trend: "+1" },
+  { id: 4, name: "Pediatric Ward", total: 30, available: 15, occupied: 15, status: "green",  department: "Pediatrics",       headNurse: "David Martinez", occupancy: 50, maintenance: 0, lastUpdated: "10 min ago", trend: "+5" },
+  { id: 5, name: "Maternity Ward", total: 25, available: 8,  occupied: 16, status: "green",  department: "Obstetrics",       headNurse: "Lisa Thompson", occupancy: 64, maintenance: 1, lastUpdated: "3 min ago", trend: "+2" },
+  { id: 6, name: "Surgical Ward",  total: 40, available: 3,  occupied: 35, status: "red",    department: "Surgery",          headNurse: "Robert Garcia", occupancy: 87.5, maintenance: 2, lastUpdated: "4 min ago", trend: "-1" },
+  { id: 7, name: "Orthopedic",     total: 35, available: 10, occupied: 24, status: "green",  department: "Orthopedics",      headNurse: "James Wilson", occupancy: 68.5, maintenance: 1, lastUpdated: "15 min ago", trend: "0" },
+  { id: 8, name: "Cardiac Care",   total: 15, available: 1,  occupied: 14, status: "red",    department: "Cardiology",       headNurse: "Amanda Taylor", occupancy: 93.3, maintenance: 0, lastUpdated: "Just now", trend: "+2" },
+  { id: 9, name: "Neurology",      total: 20, available: 4,  occupied: 16, status: "yellow", department: "Neurology",        headNurse: "Thomas Anderson", occupancy: 80, maintenance: 0, lastUpdated: "8 min ago", trend: "+1" },
 ];
 
-const recentUpdates = [
-  { id: 1, ward: "ICU", bed: "ICU-07", action: "Patient Admitted", patient: "John Doe", time: "5 min ago", status: "completed" },
-  { id: 2, ward: "Surgical Ward", bed: "SW-12", action: "Patient Discharged", patient: "Jane Smith", time: "12 min ago", status: "completed" },
-  { id: 3, ward: "Cardiac Care", bed: "CC-03", action: "Bed Maintenance", patient: "Bed cleaning", time: "20 min ago", status: "pending" },
-  { id: 4, ward: "General Ward A", bed: "GW-23", action: "Bed Assigned", patient: "Mike Johnson", time: "25 min ago", status: "completed" },
-  { id: 5, ward: "ICU", bed: "ICU-12", action: "Bed Reserved", patient: "Emergency", time: "30 min ago", status: "pending" },
-];
+const StatCard = ({ title, value, icon: Icon, gradient, pulse }) => (
+  <div className={`relative overflow-hidden rounded-3xl p-6 text-white bg-gradient-to-br ${gradient} shadow-xl hover:-translate-y-1 transition-transform`}>
+    <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+    <div className="relative z-10 flex items-center justify-between">
+      <div>
+        <p className="text-white/80 text-sm font-semibold mb-1">{title}</p>
+        <h3 className="text-4xl font-black">{value}</h3>
+      </div>
+      <div className={`p-4 bg-white/20 rounded-2xl backdrop-blur-sm ${pulse ? "animate-pulse shadow-[0_0_15px_rgba(255,255,255,0.5)]" : ""}`}>
+        <Icon className="w-8 h-8 text-white" />
+      </div>
+    </div>
+  </div>
+);
 
-const statusColor = {
-  green: "bg-emerald-500",
-  yellow: "bg-amber-500",
-  red: "bg-rose-500",
-};
-
-const statusBg = {
-  green: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  yellow: "bg-amber-100 text-amber-700 border-amber-200",
-  red: "bg-rose-100 text-rose-700 border-rose-200",
-};
-
-// ─── Ward Detail Modal ───────────────────────────────────────────────────────
-const WardDetailModal = ({ ward, onClose }) => {
-  if (!ward) return null;
-
-  const maintainedBeds = ward.maintenance;
-  const occupiedBeds = ward.occupied - maintainedBeds;
-  const availableBeds = ward.available;
-
-  const statusLabel = {
-    green: "Available",
-    yellow: "Moderate",
-    red: "Critical",
-  }[ward.status];
-
-  const statusDotColor = {
-    green: "bg-emerald-500",
-    yellow: "bg-amber-500",
-    red: "bg-rose-500",
-  }[ward.status];
-
-  const barColor = {
-    green: "bg-emerald-500",
-    yellow: "bg-amber-500",
-    red: "bg-rose-500",
-  }[ward.status];
-
-  const headerBg = {
-    green: "bg-emerald-50",
-    yellow: "bg-amber-50",
-    red: "bg-rose-50",
-  }[ward.status];
-
-  // Build bed map array: O = occupied, M = maintenance, A = available
-  const bedMap = [];
-  for (let i = 0; i < ward.total; i++) {
-    if (i < occupiedBeds) bedMap.push("occupied");
-    else if (i < occupiedBeds + maintainedBeds) bedMap.push("maintenance");
-    else bedMap.push("available");
-  }
+const OccupancyRing = ({ percentage, colorClass }) => {
+  const radius = 30;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   return (
-    // Backdrop
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      {/* Modal */}
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        {/* Modal Header */}
-        <div className={`${headerBg} rounded-t-2xl px-6 py-4 border-b border-gray-100`}>
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                className={`p-2.5 rounded-xl ${
-                  ward.status === "red"
-                    ? "bg-rose-200"
-                    : ward.status === "yellow"
-                    ? "bg-amber-200"
-                    : "bg-emerald-200"
-                }`}
-              >
-                <Bed
-                  className={`w-5 h-5 ${
-                    ward.status === "red"
-                      ? "text-rose-700"
-                      : ward.status === "yellow"
-                      ? "text-amber-700"
-                      : "text-emerald-700"
-                  }`}
-                />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">{ward.name}</h2>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-sm text-gray-500">{ward.department}</span>
-                  <span className="text-gray-300">•</span>
-                  <span className={`flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${statusBg[ward.status]}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${statusDotColor}`} />
-                    {statusLabel}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-white/60 transition-colors text-gray-500 hover:text-gray-700"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Modal Body */}
-        <div className="p-6 space-y-6">
-
-          {/* Key Stats */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-gray-50 rounded-xl p-4 text-center">
-              <p className="text-xs text-gray-500 mb-1">Total Beds</p>
-              <p className="text-2xl font-bold text-gray-900">{ward.total}</p>
-            </div>
-            <div className="bg-emerald-50 rounded-xl p-4 text-center">
-              <p className="text-xs text-emerald-600 mb-1">Available</p>
-              <p className="text-2xl font-bold text-emerald-700">{ward.available}</p>
-            </div>
-            <div className="bg-rose-50 rounded-xl p-4 text-center">
-              <p className="text-xs text-rose-500 mb-1">Occupied</p>
-              <p className="text-2xl font-bold text-rose-700">{ward.occupied}</p>
-            </div>
-          </div>
-
-          {/* Occupancy Bar */}
-          <div>
-            <div className="flex justify-between text-sm mb-2">
-              <span className="font-medium text-gray-700">Occupancy Rate</span>
-              <span className="font-bold text-gray-900">{ward.occupancy}%</span>
-            </div>
-            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-700 ${barColor}`}
-                style={{ width: `${ward.occupancy}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Ward Info Grid */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Ward Information</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-start gap-2.5 bg-gray-50 rounded-xl p-3">
-                <UserCheck className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-500">Head Nurse</p>
-                  <p className="text-sm font-medium text-gray-900 mt-0.5">{ward.headNurse}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2.5 bg-gray-50 rounded-xl p-3">
-                <Clock className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-500">Last Updated</p>
-                  <p className="text-sm font-medium text-gray-900 mt-0.5">{ward.lastUpdated}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2.5 bg-gray-50 rounded-xl p-3">
-                <Wrench className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-500">Maintenance Beds</p>
-                  <p className="text-sm font-medium text-gray-900 mt-0.5">{ward.maintenance}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2.5 bg-gray-50 rounded-xl p-3">
-                {ward.trend.startsWith("+") ? (
-                  <ArrowUpRight className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                ) : (
-                  <ArrowDownRight className="w-4 h-4 text-rose-500 mt-0.5 flex-shrink-0" />
-                )}
-                <div>
-                  <p className="text-xs text-gray-500">Today's Trend</p>
-                  <p
-                    className={`text-sm font-medium mt-0.5 ${
-                      ward.trend.startsWith("+") ? "text-emerald-600" : "text-rose-600"
-                    }`}
-                  >
-                    {ward.trend} beds
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bed Map */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Bed Map</h3>
-            <div className="flex flex-wrap gap-1.5">
-              {bedMap.map((type, i) => (
-                <div
-                  key={i}
-                  title={`Bed ${i + 1} — ${type}`}
-                  className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-semibold cursor-default transition-transform hover:scale-110 ${
-                    type === "occupied"
-                      ? "bg-rose-100 text-rose-700"
-                      : type === "maintenance"
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-emerald-100 text-emerald-700"
-                  }`}
-                >
-                  {type === "occupied" ? "O" : type === "maintenance" ? "M" : "A"}
-                </div>
-              ))}
-            </div>
-            {/* Legend */}
-            <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-sm bg-emerald-100 border border-emerald-300 inline-block" />
-                Available
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-sm bg-rose-100 border border-rose-300 inline-block" />
-                Occupied
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-sm bg-amber-100 border border-amber-300 inline-block" />
-                Maintenance
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Modal Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Close
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
-            <Edit className="w-4 h-4" />
-            Edit Ward
-          </button>
-        </div>
+    <div className="relative w-20 h-20 flex items-center justify-center">
+      <svg className="w-full h-full transform -rotate-90">
+        <circle cx="40" cy="40" r={radius} className="stroke-gray-100" strokeWidth="6" fill="none" />
+        <circle
+          cx="40" cy="40" r={radius}
+          className={`stroke-current ${colorClass} transition-all duration-1000 ease-out`}
+          strokeWidth="6" strokeLinecap="round" fill="none"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+        />
+      </svg>
+      <div className="absolute flex flex-col items-center">
+        <span className={`text-sm font-black ${colorClass}`}>{Math.round(percentage)}%</span>
       </div>
     </div>
   );
 };
 
-// ─── Main Page ───────────────────────────────────────────────────────────────
 const BedManagementPage = () => {
+  const { push } = useNotifications();
+  const { t } = useTranslation();
+  const [wards, setWards] = useState(initialWards);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [viewMode, setViewMode] = useState("grid");
+  const [filter, setFilter] = useState("All");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedWard, setSelectedWard] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newWard, setNewWard] = useState({
+    name: "", department: "General Medicine", total: "", headNurse: ""
+  });
 
-  const totalBeds = wards.reduce((acc, ward) => acc + ward.total, 0);
-  const totalAvailable = wards.reduce((acc, ward) => acc + ward.available, 0);
-  const totalOccupied = wards.reduce((acc, ward) => acc + ward.occupied, 0);
-  const criticalWards = wards.filter((w) => w.status === "red").length;
-  const occupancyRate = Math.round((totalOccupied / totalBeds) * 100);
+  const totalBeds = wards.reduce((acc, w) => acc + w.total, 0);
+  const availableBeds = wards.reduce((acc, w) => acc + w.available, 0);
+  const occupiedBeds = wards.reduce((acc, w) => acc + w.occupied, 0);
+  const maintenanceBeds = wards.reduce((acc, w) => acc + w.maintenance, 0);
 
-  const filteredWards = wards.filter((ward) => {
-    const matchesSearch =
-      ward.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ward.department.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === "all" || ward.status === filterStatus;
+  const filteredWards = wards.filter(w => {
+    const matchesSearch = w.name.toLowerCase().includes(searchTerm.toLowerCase()) || w.department.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filter === "All" ? true : filter === "Critical" ? w.status === "red" : filter === "Warning" ? w.status === "yellow" : w.status === "green";
     return matchesSearch && matchesFilter;
   });
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await new Promise(r => setTimeout(r, 800));
+    setIsRefreshing(false);
+  };
+
+  const handleOpenEdit = (ward) => {
+    push("bed", "Editing Ward", `Opening configuration for ${ward.name}...`);
+    setSelectedWard(ward);
+    setIsModalOpen(true);
+  };
+
+  const handleAdmitPatient = (wardId) => {
+    setWards(prev => prev.map(w => {
+      if (w.id === wardId && w.available > 0) {
+        push("bed", "Patient Admitted", `New admission in ${w.name}`);
+        const newAvailable = w.available - 1;
+        const newOccupied = w.occupied + 1;
+        const newOccPct = (newOccupied / w.total) * 100;
+        let newStatus = "green";
+        if (newOccPct >= 90) newStatus = "red";
+        else if (newOccPct >= 80) newStatus = "yellow";
+        
+        return { ...w, available: newAvailable, occupied: newOccupied, occupancy: newOccPct, status: newStatus };
+      }
+      return w;
+    }));
+  };
+
   return (
     <DashboardLayout>
-      {/* Ward Detail Modal */}
-      {selectedWard && (
-        <WardDetailModal ward={selectedWard} onClose={() => setSelectedWard(null)} />
-      )}
-
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-7xl mx-auto pb-10">
+        
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Bed Management</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Monitor and manage hospital bed allocation across all departments
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-indigo-100 rounded-2xl">
+              <Bed className="w-6 h-6 text-indigo-600" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-gray-900">{t("nav.beds")} Management</h1>
+              <p className="text-sm font-medium text-gray-500">Real-time ward occupancy & bed allocation</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-              <Download className="w-4 h-4 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">Export</span>
+          <div className="flex gap-3">
+            <button onClick={handleRefresh} className="flex items-center gap-2 px-4 py-2 border border-gray-200 bg-white rounded-xl text-gray-700 hover:bg-gray-50 font-bold transition-colors shadow-sm">
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} /> Refresh
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              <Bed className="w-4 h-4" />
-              <span className="text-sm font-medium">Add Ward</span>
+            <button 
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 font-bold shadow-lg shadow-indigo-200 transition-transform active:scale-95"
+            >
+              <Plus className="w-4 h-4" /> Add Ward
             </button>
           </div>
         </div>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Bed className="w-5 h-5 text-blue-600" />
-              </div>
-              <span className="text-xs text-gray-500">Total</span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900">{totalBeds}</h3>
-            <p className="text-sm text-gray-500 mt-1">Total Beds</p>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-              </div>
-              <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                {Math.round((totalAvailable / totalBeds) * 100)}%
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900">{totalAvailable}</h3>
-            <p className="text-sm text-gray-500 mt-1">Available Beds</p>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2 bg-amber-100 rounded-lg">
-                <Users className="w-5 h-5 text-amber-600" />
-              </div>
-              <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
-                {Math.round((totalOccupied / totalBeds) * 100)}%
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900">{totalOccupied}</h3>
-            <p className="text-sm text-gray-500 mt-1">Occupied Beds</p>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2 bg-rose-100 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-rose-600" />
-              </div>
-              <span className="text-xs text-rose-600 bg-rose-50 px-2 py-1 rounded-full">
-                Critical
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900">{criticalWards}</h3>
-            <p className="text-sm text-gray-500 mt-1">Critical Wards</p>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Activity className="w-5 h-5 text-purple-600" />
-              </div>
-              <span className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
-                Rate
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900">{occupancyRate}%</h3>
-            <p className="text-sm text-gray-500 mt-1">Occupancy Rate</p>
-          </div>
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard title="Total Beds" value={totalBeds} icon={Bed} gradient="from-blue-500 to-indigo-600" />
+          <StatCard title="Available" value={availableBeds} icon={CheckCircle} gradient="from-emerald-400 to-teal-500" />
+          <StatCard title="Occupied" value={occupiedBeds} icon={Users} gradient="from-amber-400 to-orange-500" />
+          <StatCard title="Maintenance" value={maintenanceBeds} icon={Activity} gradient="from-rose-400 to-red-500" pulse={maintenanceBeds > 0} />
         </div>
 
-        {/* Alerts */}
-        {criticalWards > 0 && (
-          <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h4 className="text-sm font-semibold text-rose-800">Critical Bed Shortage Alert</h4>
-              <p className="text-sm text-rose-700 mt-1">
-                {criticalWards} wards have critically low bed availability. Immediate attention
-                required for ICU, Surgical Ward, and Cardiac Care.
-              </p>
-              <button
-                onClick={() => setFilterStatus("red")}
-                className="mt-2 text-xs font-medium text-rose-800 bg-rose-200 px-3 py-1.5 rounded-lg hover:bg-rose-300 transition-colors"
-              >
-                View Critical Wards
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Search & Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               placeholder="Search wards or departments..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all"
+              className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
             />
           </div>
-          <div className="flex gap-2">
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200"
-            >
-              <option value="all">All Status</option>
-              <option value="green">Available</option>
-              <option value="yellow">Moderate</option>
-              <option value="red">Critical</option>
-            </select>
-            <div className="flex border border-gray-200 rounded-lg overflow-hidden">
+          <div className="flex gap-2 p-1 bg-white border border-gray-200 rounded-xl shadow-sm">
+            {["All", "Normal", "Warning", "Critical"].map(f => (
               <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2.5 ${viewMode === "grid" ? "bg-gray-100" : "bg-white hover:bg-gray-50"}`}
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
+                  filter === f ? "bg-indigo-50 text-indigo-700" : "text-gray-500 hover:bg-gray-50"
+                }`}
               >
-                <BarChart3 className="w-4 h-4 text-gray-600" />
+                {f}
               </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-2.5 ${viewMode === "list" ? "bg-gray-100" : "bg-white hover:bg-gray-50"}`}
-              >
-                <PieChart className="w-4 h-4 text-gray-600" />
-              </button>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Wards Grid */}
-        {viewMode === "grid" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {filteredWards.map((ward) => (
-              <div
-                key={ward.id}
-                className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-              >
-                {/* Card Header */}
-                <div
-                  className={`p-4 border-b ${
-                    ward.status === "red"
-                      ? "bg-rose-50"
-                      : ward.status === "yellow"
-                      ? "bg-amber-50"
-                      : "bg-emerald-50"
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`p-2.5 rounded-xl ${
-                          ward.status === "red"
-                            ? "bg-rose-200"
-                            : ward.status === "yellow"
-                            ? "bg-amber-200"
-                            : "bg-emerald-200"
-                        }`}
-                      >
-                        <Bed
-                          className={`w-5 h-5 ${
-                            ward.status === "red"
-                              ? "text-rose-700"
-                              : ward.status === "yellow"
-                              ? "text-amber-700"
-                              : "text-emerald-700"
-                          }`}
-                        />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{ward.name}</h3>
-                        <p className="text-xs text-gray-500">{ward.department}</p>
-                      </div>
+        {/* Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredWards.map(ward => {
+            const statusColor = ward.status === "red" ? "text-rose-600" : ward.status === "yellow" ? "text-amber-500" : "text-emerald-500";
+            const bgGradient = ward.status === "red" ? "bg-gradient-to-br from-rose-50 to-white border-rose-100" : 
+                               ward.status === "yellow" ? "bg-gradient-to-br from-amber-50 to-white border-amber-100" : 
+                               "bg-gradient-to-br from-white to-gray-50 border-gray-100";
+            return (
+              <div key={ward.id} className={`rounded-3xl border ${bgGradient} shadow-sm hover:shadow-xl transition-all p-5 flex flex-col`}>
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-xl font-black text-gray-900">{ward.name}</h3>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mt-0.5">{ward.department}</p>
+                  </div>
+                  <button onClick={() => handleOpenEdit(ward)} className="p-2 bg-white rounded-xl shadow-sm border border-gray-100 hover:bg-gray-50 text-gray-500 transition-colors">
+                    <Edit className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-4 mb-6">
+                  <OccupancyRing percentage={ward.occupancy} colorClass={statusColor} />
+                  <div className="flex-1 grid grid-cols-2 gap-2">
+                    <div className="bg-white rounded-xl p-2.5 border border-gray-100 text-center shadow-sm">
+                      <p className="text-[10px] text-gray-400 font-bold uppercase">Available</p>
+                      <p className="text-xl font-black text-emerald-600">{ward.available}</p>
                     </div>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${statusBg[ward.status]}`}
-                    >
-                      {ward.available} Available
-                    </span>
+                    <div className="bg-white rounded-xl p-2.5 border border-gray-100 text-center shadow-sm">
+                      <p className="text-[10px] text-gray-400 font-bold uppercase">Occupied</p>
+                      <p className="text-xl font-black text-gray-900">{ward.occupied}</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Card Body */}
-                <div className="p-4 space-y-4">
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="text-center">
-                      <p className="text-xs text-gray-500">Total</p>
-                      <p className="text-lg font-semibold text-gray-900">{ward.total}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-gray-500">Occupied</p>
-                      <p className="text-lg font-semibold text-gray-900">{ward.occupied}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-gray-500">Available</p>
-                      <p className="text-lg font-semibold text-gray-900">{ward.available}</p>
-                    </div>
+                <div className="space-y-3 mb-6 flex-1">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 font-medium">
+                    <Users className="w-4 h-4 text-gray-400" />
+                    Head: <span className="text-gray-900">{ward.headNurse}</span>
                   </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600 font-medium">
+                    <Activity className="w-4 h-4 text-gray-400" />
+                    Maintenance: <span className={ward.maintenance > 0 ? "text-rose-600 font-bold" : "text-gray-900"}>{ward.maintenance} Beds</span>
+                  </div>
+                </div>
 
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-500">Occupancy Rate</span>
-                      <span className="font-medium text-gray-700">{ward.occupancy}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ${
-                          ward.status === "red"
-                            ? "bg-rose-500"
-                            : ward.status === "yellow"
-                            ? "bg-amber-500"
-                            : "bg-emerald-500"
-                        }`}
-                        style={{ width: `${ward.occupancy}%` }}
-                      />
-                    </div>
+                <div className="pt-4 border-t border-gray-100/50 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400">
+                    {ward.trend.startsWith("+") ? <TrendingUp className="w-3.5 h-3.5 text-rose-500" /> : <TrendingDown className="w-3.5 h-3.5 text-emerald-500" />}
+                    {ward.trend} this week
                   </div>
-
-                  <div className="flex items-center justify-between text-xs border-t border-gray-100 pt-3">
-                    <div className="flex items-center gap-1 text-gray-500">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>{ward.lastUpdated}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-gray-500">Head:</span>
-                      <span className="font-medium text-gray-700">
-                        {ward.headNurse.split(" ")[1]}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {ward.trend.startsWith("+") ? (
-                        <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
-                      ) : (
-                        <ArrowDownRight className="w-3.5 h-3.5 text-rose-500" />
-                      )}
-                      <span
-                        className={
-                          ward.trend.startsWith("+") ? "text-emerald-600" : "text-rose-600"
-                        }
-                      >
-                        {ward.trend}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons — View Details now opens modal */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setSelectedWard(ward)}
-                      className="flex-1 flex items-center justify-center gap-1 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      View Details
-                    </button>
-                    <button className="flex items-center justify-center p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                      <Edit className="w-3.5 h-3.5 text-gray-600" />
-                    </button>
-                    <button className="flex items-center justify-center p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                      <RefreshCw className="w-3.5 h-3.5 text-gray-600" />
-                    </button>
-                  </div>
+                  <button 
+                    onClick={() => handleAdmitPatient(ward.id)}
+                    disabled={ward.available === 0}
+                    className={`px-4 py-2 text-sm font-bold rounded-xl transition-all flex items-center gap-1.5
+                      ${ward.available === 0 
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+                        : "bg-gray-900 text-white hover:bg-gray-800 shadow-md hover:-translate-y-0.5 active:translate-y-0"}`}
+                  >
+                    <Plus className="w-4 h-4" /> Admit Patient
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          // List View
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ward</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Beds</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Occupied</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Available</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Head Nurse</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredWards.map((ward) => (
-                  <tr key={ward.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">{ward.name}</td>
-                    <td className="px-6 py-4 text-gray-600">{ward.department}</td>
-                    <td className="px-6 py-4 text-gray-600">{ward.total}</td>
-                    <td className="px-6 py-4 text-gray-600">{ward.occupied}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusBg[ward.status]}`}>
-                        {ward.available}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className={`w-2 h-2 rounded-full ${statusColor[ward.status]}`} />
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">{ward.headNurse}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setSelectedWard(ward)}
-                          className="p-1 hover:bg-gray-100 rounded transition-colors"
-                          title="View Details"
-                        >
-                          <Eye className="w-4 h-4 text-gray-600" />
-                        </button>
-                        <button className="p-1 hover:bg-gray-100 rounded transition-colors">
-                          <Edit className="w-4 h-4 text-gray-600" />
-                        </button>
-                        <button className="p-1 hover:bg-gray-100 rounded transition-colors">
-                          <RefreshCw className="w-4 h-4 text-gray-600" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Recent Activity */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Recent Bed Updates</h3>
-            <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">View All</button>
-          </div>
-          <div className="space-y-3">
-            {recentUpdates.map((update) => (
-              <div
-                key={update.id}
-                className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-2 h-2 rounded-full ${
-                      update.status === "completed" ? "bg-emerald-500" : "bg-amber-500"
-                    }`}
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      <span className="font-semibold">{update.ward}</span> - Bed {update.bed}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {update.action}: {update.patient}
-                    </p>
-                  </div>
-                </div>
-                <span className="text-xs text-gray-400">{update.time}</span>
-              </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
+
+      {/* Add Ward Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl">
+            <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-6 text-white flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-black">Add New Ward</h2>
+                <p className="text-blue-100 text-sm">Enter ward configuration details</p>
+              </div>
+              <button onClick={() => setShowAddModal(false)} className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const total = parseInt(newWard.total) || 0;
+              setWards([...wards, {
+                id: Date.now(),
+                name: newWard.name,
+                total: total,
+                available: total,
+                occupied: 0,
+                status: "green",
+                department: newWard.department,
+                headNurse: newWard.headNurse,
+                occupancy: 0,
+                maintenance: 0,
+                lastUpdated: "Just now",
+                trend: "0"
+              }]);
+              setShowAddModal(false);
+              setNewWard({ name: "", department: "General Medicine", total: "", headNurse: "" });
+              push("bed", "Ward Created", `${newWard.name} has been added successfully.`);
+            }} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Ward Name</label>
+                <input required className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={newWard.name} onChange={e=>setNewWard({...newWard, name: e.target.value})} placeholder="e.g. Isolation Ward" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Department</label>
+                <input required className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={newWard.department} onChange={e=>setNewWard({...newWard, department: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Capacity</label>
+                  <input required type="number" min="1" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={newWard.total} onChange={e=>setNewWard({...newWard, total: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Head Nurse</label>
+                  <input required className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={newWard.headNurse} onChange={e=>setNewWard({...newWard, headNurse: e.target.value})} />
+                </div>
+              </div>
+              <button type="submit" className="w-full py-3 mt-4 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg active:scale-95">Create Ward</button>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

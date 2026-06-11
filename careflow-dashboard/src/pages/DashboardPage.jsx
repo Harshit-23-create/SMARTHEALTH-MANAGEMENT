@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import StatCard from "@/components/StatCard";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useNotifications } from "@/context/NotificationContext";
 import { 
   Bed, Users, AlertTriangle, Activity, Heart, 
   TrendingUp, TrendingDown, Calendar, Clock, 
   Ambulance, Stethoscope, Pill, Syringe,
   ArrowUpRight, ArrowDownRight, MoreVertical,
-  Download, RefreshCw, Filter
+  Download, RefreshCw, Filter, Check, Thermometer
 } from "lucide-react";
+import { downloadFile } from "@/utils/downloadHelper";
 import { 
   LineChart, Line, AreaChart, Area, 
   BarChart, Bar, PieChart, Pie, Cell,
@@ -15,7 +18,7 @@ import {
   ResponsiveContainer, Legend 
 } from "recharts";
 
-// Enhanced data with more metrics
+// Mock Data
 const monthlyData = [
   { month: "Jan", patients: 320, admissions: 145, discharges: 132, occupancy: 68 },
   { month: "Feb", patients: 280, admissions: 138, discharges: 141, occupancy: 72 },
@@ -23,21 +26,6 @@ const monthlyData = [
   { month: "Apr", patients: 400, admissions: 178, discharges: 169, occupancy: 78 },
   { month: "May", patients: 380, admissions: 165, discharges: 172, occupancy: 76 },
   { month: "Jun", patients: 420, admissions: 185, discharges: 180, occupancy: 80 },
-  { month: "Jul", patients: 390, admissions: 172, discharges: 168, occupancy: 79 },
-  { month: "Aug", patients: 450, admissions: 198, discharges: 190, occupancy: 82 },
-  { month: "Sep", patients: 410, admissions: 182, discharges: 176, occupancy: 81 },
-  { month: "Oct", patients: 470, admissions: 205, discharges: 198, occupancy: 84 },
-  { month: "Nov", patients: 440, admissions: 192, discharges: 185, occupancy: 83 },
-  { month: "Dec", patients: 500, admissions: 220, discharges: 210, occupancy: 86 },
-];
-
-const recentAdmissions = [
-  { id: 1, name: "Rakesh", age: 45, disease: "Pneumonia", bed: "ICU-03", date: "2026-02-23", time: "14:30", status: "Critical", doctor: "Dr. Williams", department: "ICU" },
-  { id: 2, name: "Suresh", age: 32, disease: "Fracture", bed: "W2-12", date: "2026-02-22", time: "09:15", status: "Stable", doctor: "Dr. Martinez", department: "Ortho" },
-  { id: 3, name: "Mukesh", age: 58, disease: "Cardiac", bed: "ICU-07", date: "2026-02-22", time: "16:45", status: "Critical", doctor: "Dr. Thompson", department: "Cardio" },
-  { id: 4, name: "Rupesh", age: 27, disease: "Appendicitis", bed: "W1-05", date: "2026-02-21", time: "11:20", status: "Recovering", doctor: "Dr. Garcia", department: "Surgery" },
-  
-  
 ];
 
 const departmentOccupancy = [
@@ -49,376 +37,236 @@ const departmentOccupancy = [
 ];
 
 const staffOnDuty = [
-  { name: "Doctors", count: 24, icon: Stethoscope, color: "#3b82f6" },
-  { name: "Nurses", count: 68, icon: Activity, color: "#10b981" },
-  { name: "Support", count: 32, icon: Users, color: "#f59e0b" },
+  { name: "Doctors", count: 24, icon: Stethoscope, color: "text-blue-500", bg: "bg-blue-100" },
+  { name: "Nurses", count: 68, icon: Activity, color: "text-emerald-500", bg: "bg-emerald-100" },
+  { name: "Support", count: 32, icon: Users, color: "text-amber-500", bg: "bg-amber-100" },
 ];
 
 const upcomingSurgeries = [
-  { time: "09:00", patient: "Robert", procedure: "Appendectomy", surgeon: "Dr. Williams", room: "OT-3" },
-  { time: "10:30", patient: "Maria", procedure: "C-Section", surgeon: "Dr. Martinez", room: "OT-1" },
-  { time: "13:00", patient: "James Wilson", procedure: "Knee Replacement", surgeon: "Dr. Thompson", room: "OT-2" },
-  
+  { time: "09:00", patient: "Robert", procedure: "Appendectomy", surgeon: "Dr. Williams", room: "OT-3", status: "Ongoing" },
+  { time: "10:30", patient: "Maria", procedure: "C-Section", surgeon: "Dr. Martinez", room: "OT-1", status: "Next" },
+  { time: "14:00", patient: "James", procedure: "Knee Replacement", surgeon: "Dr. Smith", room: "OT-2", status: "Scheduled" },
 ];
 
-const statusColors = {
-  Critical: "bg-red-100 text-red-700 border-red-200",
-  Stable: "bg-green-100 text-green-700 border-green-200",
-  Recovering: "bg-blue-100 text-blue-700 border-blue-200",
-  "Under Observation": "bg-yellow-100 text-yellow-700 border-yellow-200"
-};
+const StatCard = ({ title, value, subtitle, icon: Icon, trend, trendValue, gradient }) => (
+  <div className={`relative overflow-hidden rounded-3xl p-6 text-white bg-gradient-to-br ${gradient} shadow-xl hover:-translate-y-1 transition-transform duration-300`}>
+    <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+    <div className="relative z-10 flex justify-between items-start mb-4">
+      <div>
+        <p className="text-white/80 text-sm font-semibold mb-1">{title}</p>
+        <h3 className="text-4xl font-black">{value}</h3>
+      </div>
+      <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
+        <Icon className="w-6 h-6 text-white" />
+      </div>
+    </div>
+    <div className="relative z-10 flex items-center justify-between">
+      <div className="flex items-center gap-1.5 px-2 py-1 bg-white/20 rounded-lg text-xs font-bold backdrop-blur-sm">
+        {trend === 'up' ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+        <span>{trendValue}</span>
+      </div>
+      <span className="text-xs font-medium text-white/70">{subtitle}</span>
+    </div>
+  </div>
+);
 
 const DashboardPage = () => {
-  const [selectedTimeRange, setSelectedTimeRange] = useState("monthly");
-  const [occupancyRate, setOccupancyRate] = useState(78);
-  const [refreshing, setRefreshing] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+  const { t } = useTranslation();
+  const { push } = useNotifications();
+  const navigate = useNavigate();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await new Promise(r => setTimeout(r, 1000));
+    setIsRefreshing(false);
   };
-
-  // Calculate metrics
-  const totalPatients = recentAdmissions.length;
-  const avgWaitTime = "12 min";
-  const emergencyCases = 3;
-  const surgeryCount = 8;
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header with actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Welcome back, Dr. Smith • Last updated: {new Date().toLocaleTimeString()}
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <div className="flex items-center bg-white border border-gray-200 rounded-lg p-1">
-              <button
-                onClick={() => setSelectedTimeRange("daily")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                  selectedTimeRange === "daily" 
-                    ? "bg-blue-600 text-white" 
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                Daily
-              </button>
-              <button
-                onClick={() => setSelectedTimeRange("weekly")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                  selectedTimeRange === "weekly" 
-                    ? "bg-blue-600 text-white" 
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                Weekly
-              </button>
-              <button
-                onClick={() => setSelectedTimeRange("monthly")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                  selectedTimeRange === "monthly" 
-                    ? "bg-blue-600 text-white" 
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                Monthly
-              </button>
+      <div className="space-y-6 max-w-7xl mx-auto pb-10">
+        {/* Header section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="p-4 bg-primary/10 text-primary rounded-2xl">
+              <Heart className="w-8 h-8" />
             </div>
-            
+            <div>
+              <h1 className="text-3xl font-black text-gray-900 tracking-tight">{t("dashboard.title")}</h1>
+              <p className="text-gray-500 font-medium mt-1">{t("dashboard.subtitle")}</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
             <button 
-              onClick={handleRefresh}
-              className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              onClick={() => {
+                push("system", "Report Exported", "The dashboard report has been downloaded.");
+                downloadFile("dashboard_report.csv", "Metric,Value\nTotal Patients,1284\nAvailable Beds,142\nCritical Cases,28\nActive Staff,124");
+              }}
+              className="flex items-center gap-2 px-5 py-2.5 bg-gray-50 text-gray-700 rounded-xl hover:bg-gray-100 font-semibold border border-gray-200 transition-colors"
             >
-              <RefreshCw className={`w-5 h-5 text-gray-600 ${refreshing ? 'animate-spin' : ''}`} />
+              <Download className="w-4 h-4" /> Export Report
             </button>
-            
-            <button className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-              <Download className="w-5 h-5 text-gray-600" />
+            <button onClick={handleRefresh} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 font-semibold shadow-lg shadow-primary/30 transition-all active:scale-95">
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} /> Refresh
             </button>
           </div>
         </div>
 
-        {/* Key Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600" />
-              </div>
-              <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full flex items-center">
-                <ArrowUpRight className="w-3 h-3 mr-1" />
-                +12.5%
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900">156</h3>
-            <p className="text-sm text-gray-500 mt-1">Total Patients</p>
-            <p className="text-xs text-gray-400 mt-2">↑ 8 from yesterday</p>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <Clock className="w-6 h-6 text-yellow-600" />
-              </div>
-              <span className="text-xs font-medium text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">
-                Average
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900">{avgWaitTime}</h3>
-            <p className="text-sm text-gray-500 mt-1">Avg. Wait Time</p>
-            <p className="text-xs text-gray-400 mt-2">↓ 3 min from yesterday</p>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-red-100 rounded-lg">
-                <Ambulance className="w-6 h-6 text-red-600" />
-              </div>
-              <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full">
-                Urgent
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900">{emergencyCases}</h3>
-            <p className="text-sm text-gray-500 mt-1">Emergency Cases</p>
-            <p className="text-xs text-gray-400 mt-2">↑ 2 from yesterday</p>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <Activity className="w-6 h-6 text-purple-600" />
-              </div>
-              <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
-                Scheduled
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900">{surgeryCount}</h3>
-            <p className="text-sm text-gray-500 mt-1">Surgeries Today</p>
-            <p className="text-xs text-gray-400 mt-2">Next in 45 min</p>
-          </div>
+        {/* Top Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard 
+            title={t("dashboard.totalPatients")} value="1,284" subtitle="vs last month" 
+            icon={Users} trend="up" trendValue="+12.5%" gradient="from-blue-600 to-indigo-600" 
+          />
+          <StatCard 
+            title={t("dashboard.availableBeds")} value="142" subtitle="84% occupancy" 
+            icon={Bed} trend="down" trendValue="-3.2%" gradient="from-emerald-500 to-teal-600" 
+          />
+          <StatCard 
+            title={t("dashboard.criticalCases")} value="28" subtitle="Requires attention" 
+            icon={AlertTriangle} trend="up" trendValue="+5.1%" gradient="from-rose-500 to-red-600" 
+          />
+          <StatCard 
+            title={t("dashboard.activeStaff")} value="124" subtitle="On current shift" 
+            icon={Activity} trend="up" trendValue="+2.4%" gradient="from-amber-500 to-orange-500" 
+          />
         </div>
 
-        {/* Alert Banner */}
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 animate-pulse">
-          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h4 className="text-sm font-semibold text-amber-800">Predicted Bed Shortage Alert</h4>
-            <p className="text-sm text-amber-700 mt-1">
-              ICU beds expected to reach 95% occupancy by next week. Consider preparing overflow capacity in Ward 3.
-            </p>
-            <div className="flex gap-3 mt-3">
-              <button className="text-xs font-medium text-amber-800 bg-amber-200 px-3 py-1.5 rounded-lg hover:bg-amber-300 transition-colors">
-                View Details
-              </button>
-              <button className="text-xs font-medium text-amber-700 hover:text-amber-800 transition-colors">
-                Dismiss
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Chart - Patient Trends */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6">
+          {/* Main Chart */}
+          <div className="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+            <div className="flex justify-between items-center mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Patient Trends</h3>
-                <p className="text-sm text-gray-500">Monthly admission and discharge patterns</p>
+                <h3 className="text-xl font-bold text-gray-900">{t("dashboard.patientFlow")}</h3>
+                <p className="text-sm text-gray-500 mt-1">Admissions vs Discharges over 6 months</p>
               </div>
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <Filter className="w-4 h-4 text-gray-600" />
-              </button>
+              <select className="bg-gray-50 border border-gray-200 text-sm rounded-lg px-3 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-primary/20">
+                <option>Last 6 Months</option>
+                <option>This Year</option>
+              </select>
             </div>
-            
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#6b7280' }} />
-                <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
-                  }} 
-                />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="patients" 
-                  name="Total Patients"
-                  stroke="#3b82f6" 
-                  strokeWidth={3}
-                  dot={{ r: 4, fill: "#3b82f6" }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="admissions" 
-                  name="Admissions"
-                  stroke="#10b981" 
-                  strokeWidth={2}
-                  dot={{ r: 3, fill: "#10b981" }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="discharges" 
-                  name="Discharges"
-                  stroke="#f59e0b" 
-                  strokeWidth={2}
-                  dot={{ r: 3, fill: "#f59e0b" }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="h-[320px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorAdmissions" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorDischarges" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)', fontWeight: 'bold' }}
+                    itemStyle={{ fontSize: '14px' }}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '14px', fontWeight: 'bold' }} />
+                  <Area type="monotone" dataKey="admissions" name="Admissions" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorAdmissions)" />
+                  <Area type="monotone" dataKey="discharges" name="Discharges" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorDischarges)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
           {/* Department Occupancy */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Department Occupancy</h3>
-              <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                {Math.round((departmentOccupancy.reduce((acc, dept) => acc + dept.occupied, 0) / 
-                 departmentOccupancy.reduce((acc, dept) => acc + dept.beds, 0)) * 100)}% Full
-              </span>
-            </div>
-            
-            <div className="space-y-4">
-              {departmentOccupancy.map((dept) => (
-                <div key={dept.name}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-700">{dept.name}</span>
-                    <span className="text-sm text-gray-600">
-                      {dept.occupied}/{dept.beds} beds
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{ 
-                        width: `${(dept.occupied / dept.beds) * 100}%`,
-                        backgroundColor: dept.color 
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Staff on Duty</h4>
-              <div className="grid grid-cols-3 gap-3">
-                {staffOnDuty.map((staff) => (
-                  <div key={staff.name} className="text-center">
-                    <div className={`inline-flex p-2 rounded-lg mb-2`} style={{ backgroundColor: `${staff.color}20` }}>
-                      <staff.icon className="w-4 h-4" style={{ color: staff.color }} />
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-6">{t("dashboard.departmentOccupancy")}</h3>
+            <div className="space-y-5">
+              {departmentOccupancy.map((dept) => {
+                const percentage = Math.round((dept.occupied / dept.beds) * 100);
+                return (
+                  <div key={dept.name}>
+                    <div className="flex justify-between items-end mb-2">
+                      <span className="font-bold text-gray-700 text-sm">{dept.name}</span>
+                      <div className="text-right">
+                        <span className="text-sm font-black" style={{ color: dept.color }}>{percentage}%</span>
+                        <span className="text-xs text-gray-500 ml-1">({dept.occupied}/{dept.beds})</span>
+                      </div>
                     </div>
-                    <p className="text-sm font-semibold text-gray-900">{staff.count}</p>
-                    <p className="text-xs text-gray-500">{staff.name}</p>
+                    <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                      <div 
+                        className="h-2.5 rounded-full transition-all duration-1000 ease-out" 
+                        style={{ width: `${percentage}%`, backgroundColor: dept.color }}
+                      ></div>
+                    </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* Bottom Section - Recent Admissions & Upcoming Surgeries */}
+        {/* Bottom Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Admissions Table */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Recent Admissions</h3>
-                  <p className="text-sm text-gray-500">Latest patient admissions</p>
-                </div>
-                <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                  View All
-                </button>
-              </div>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bed</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {recentAdmissions.slice(0, 5).map((patient) => (
-                    <tr key={patient.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="font-medium text-gray-900">{patient.name}</div>
-                          <div className="text-xs text-gray-500">{patient.age}y • {patient.disease}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{patient.department}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{patient.bed}</td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColors[patient.status] || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
-                          {patient.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{patient.time}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
           {/* Upcoming Surgeries */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Today's Surgeries</h3>
-                  <p className="text-sm text-gray-500">Scheduled operations</p>
-                </div>
-                <span className="text-sm font-medium text-gray-600">{upcomingSurgeries.length} scheduled</span>
-              </div>
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900">{t("dashboard.upcomingSurgeries")}</h3>
+              <button 
+                onClick={() => push("system", "Schedule Module", "Opening full surgery schedule view...")}
+                className="text-sm font-bold text-primary hover:text-primary/80 transition-colors"
+              >
+                {t("dashboard.viewFullSchedule")}
+              </button>
             </div>
-
-            <div className="divide-y divide-gray-100">
-              {upcomingSurgeries.map((surgery, index) => (
-                <div key={index} className="p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                        <Clock className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-gray-900">{surgery.patient}</h4>
-                        <p className="text-sm text-gray-500">{surgery.procedure}</p>
-                      </div>
-                    </div>
-                    <span className="text-sm font-semibold text-gray-900">{surgery.time}</span>
+            <div className="space-y-4">
+              {upcomingSurgeries.map((surgery, i) => (
+                <div key={i} className="flex gap-4 p-4 rounded-2xl border border-gray-100 hover:border-primary/30 hover:shadow-md transition-all group">
+                  <div className="w-16 flex flex-col items-center justify-center border-r border-gray-100 pr-4">
+                    <span className="text-xs text-gray-500 font-bold uppercase">Time</span>
+                    <span className="text-lg font-black text-gray-900 group-hover:text-primary transition-colors">{surgery.time}</span>
                   </div>
-                  <div className="flex items-center gap-4 ml-13">
-                    <span className="text-xs text-gray-500">{surgery.surgeon}</span>
-                    <span className="text-xs text-gray-400">•</span>
-                    <span className="text-xs text-gray-500">Room {surgery.room}</span>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-bold text-gray-900 text-lg">{surgery.procedure}</h4>
+                      <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg
+                        ${surgery.status === 'Ongoing' ? 'bg-rose-100 text-rose-600 animate-pulse' : 
+                          surgery.status === 'Next' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}`}>
+                        {surgery.status}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1 font-medium">Patient: <span className="text-gray-900">{surgery.patient}</span> • {surgery.room}</p>
+                    <p className="text-xs text-gray-400 mt-2 flex items-center gap-1.5">
+                      <Stethoscope className="w-3.5 h-3.5" /> {surgery.surgeon}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
+          </div>
 
-            <div className="p-4 bg-gray-50 border-t border-gray-100">
-              <button className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium">
-                View Full Schedule
+          {/* Active Staff */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-6">{t("dashboard.staffOnDuty")}</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {staffOnDuty.map((staff, i) => (
+                <div key={i} className="p-5 rounded-2xl border border-gray-100 text-center hover:shadow-md transition-all">
+                  <div className={`w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-3 ${staff.bg} ${staff.color}`}>
+                    <staff.icon className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-3xl font-black text-gray-900">{staff.count}</h4>
+                  <p className="text-sm font-semibold text-gray-500 mt-1">{staff.name}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 p-5 rounded-2xl bg-gradient-to-r from-gray-900 to-gray-800 text-white flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400 font-medium mb-1">Current Shift</p>
+                <h4 className="text-xl font-bold flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-amber-400" /> Morning Shift (08:00 - 16:00)
+                </h4>
+              </div>
+              <button 
+                onClick={() => push("system", "Staff Roster", "Opening complete staff roster and shift manager...")}
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-bold transition-colors backdrop-blur-sm"
+              >
+                View Roster
               </button>
             </div>
           </div>
