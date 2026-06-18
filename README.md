@@ -1,4 +1,4 @@
-# CareFlow Dashboard 🏥
+# SMARTHEALTH MANAGEMENT 🏥
 
 A full-stack **Hospital Management System** built with the MERN stack (MongoDB, Express, React, Node.js). Features patient management, ambulance tracking, appointment booking, analytics dashboard, and more.
 
