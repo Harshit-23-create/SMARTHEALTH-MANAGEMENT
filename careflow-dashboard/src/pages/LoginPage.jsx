@@ -304,6 +304,7 @@ const LoginPage = () => {
                   </label>
                   <button
                     type="button"
+                    onClick={() => alert("Please contact your hospital administrator to reset your password.")}
                     className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                   >
                     Forgot password?

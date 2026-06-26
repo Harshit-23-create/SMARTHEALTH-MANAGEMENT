@@ -74,6 +74,8 @@ const BedManagementPage = () => {
     name: "", department: "General Medicine", total: "", headNurse: ""
   });
 
+  const [editForm, setEditForm] = useState({ available: "", occupied: "", maintenance: "", headNurse: "" });
+
   const totalBeds = wards.reduce((acc, w) => acc + w.total, 0);
   const availableBeds = wards.reduce((acc, w) => acc + w.available, 0);
   const occupiedBeds = wards.reduce((acc, w) => acc + w.occupied, 0);
@@ -94,6 +96,7 @@ const BedManagementPage = () => {
   const handleOpenEdit = (ward) => {
     push("bed", "Editing Ward", `Opening configuration for ${ward.name}...`);
     setSelectedWard(ward);
+    setEditForm({ available: ward.available, occupied: ward.occupied, maintenance: ward.maintenance, headNurse: ward.headNurse });
     setIsModalOpen(true);
   };
 
@@ -242,6 +245,58 @@ const BedManagementPage = () => {
           })}
         </div>
       </div>
+
+      {/* Edit Ward Modal */}
+      {isModalOpen && selectedWard && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl">
+            <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-6 text-white flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-black">Edit Ward</h2>
+                <p className="text-blue-100 text-sm">{selectedWard.name} — {selectedWard.department}</p>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const available = parseInt(editForm.available) || 0;
+              const occupied = parseInt(editForm.occupied) || 0;
+              const maintenance = parseInt(editForm.maintenance) || 0;
+              const newOccPct = selectedWard.total > 0 ? (occupied / selectedWard.total) * 100 : 0;
+              let newStatus = "green";
+              if (newOccPct >= 90) newStatus = "red";
+              else if (newOccPct >= 80) newStatus = "yellow";
+              setWards(prev => prev.map(w => w.id === selectedWard.id
+                ? { ...w, available, occupied, maintenance, headNurse: editForm.headNurse, occupancy: newOccPct, status: newStatus, lastUpdated: "Just now" }
+                : w
+              ));
+              push("bed", "Ward Updated", `${selectedWard.name} configuration saved.`);
+              setIsModalOpen(false);
+            }} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Head Nurse</label>
+                <input required className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={editForm.headNurse} onChange={e => setEditForm({...editForm, headNurse: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Available</label>
+                  <input required type="number" min="0" max={selectedWard.total} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={editForm.available} onChange={e => setEditForm({...editForm, available: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Occupied</label>
+                  <input required type="number" min="0" max={selectedWard.total} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={editForm.occupied} onChange={e => setEditForm({...editForm, occupied: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Maintenance</label>
+                  <input required type="number" min="0" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={editForm.maintenance} onChange={e => setEditForm({...editForm, maintenance: e.target.value})} />
+                </div>
+              </div>
+              <p className="text-xs text-gray-400">Total capacity: <span className="font-bold text-gray-700">{selectedWard.total} beds</span></p>
+              <button type="submit" className="w-full py-3 mt-4 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg active:scale-95">Save Changes</button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Add Ward Modal */}
       {showAddModal && (

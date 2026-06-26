@@ -63,9 +63,19 @@ const PatientManagementPage = () => {
         push("patient", "Patient Admitted", `${formData.name} admitted to ${formData.department}`);
         fetchPatients();
         setShowModal(false);
+        // Reset form for next use
+        setFormData({
+          name: "", age: "", gender: "Male", disease: "",
+          bed: "", department: "General Medicine",
+          contactNumber: "", status: "Admitted", doctor: ""
+        });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.message || "Failed to admit patient. Please try again.");
       }
     } catch (error) {
       console.error("Error adding patient:", error);
+      alert("Cannot connect to server. Make sure the backend is running.");
     }
   };
 
@@ -76,9 +86,12 @@ const PatientManagementPage = () => {
       if (res.ok) {
         push("patient", "Patient Discharged", `${name} has been discharged.`);
         fetchPatients();
+      } else {
+        alert("Failed to discharge patient. Please try again.");
       }
     } catch (error) {
       console.error("Error deleting:", error);
+      alert("Cannot connect to server. Make sure the backend is running.");
     }
   };
 
@@ -240,22 +253,83 @@ const PatientManagementPage = () => {
               </div>
               <button onClick={() => setShowModal(false)} className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors"><X className="w-5 h-5" /></button>
             </div>
-            <form onSubmit={handleAddPatient} className="p-6 space-y-4">
+            <form onSubmit={handleAddPatient} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              {/* Row 1: Name + Age */}
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Name</label><input required className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} /></div>
-                <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Age</label><input required type="number" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={formData.age} onChange={e=>setFormData({...formData, age: e.target.value})} /></div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Full Name</label>
+                  <input required placeholder="e.g. John Doe" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Age</label>
+                  <input required type="number" min="0" max="150" placeholder="e.g. 35" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" value={formData.age} onChange={e=>setFormData({...formData, age: e.target.value})} />
+                </div>
               </div>
-              <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Diagnosis/Disease</label><input required className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={formData.disease} onChange={e=>setFormData({...formData, disease: e.target.value})} /></div>
+
+              {/* Row 2: Gender + Contact */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Gender</label>
+                  <select className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" value={formData.gender} onChange={e=>setFormData({...formData, gender: e.target.value})}>
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Contact Number</label>
+                  <input required placeholder="e.g. 9876543210" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" value={formData.contactNumber} onChange={e=>setFormData({...formData, contactNumber: e.target.value})} />
+                </div>
+              </div>
+
+              {/* Row 3: Diagnosis */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Diagnosis / Disease</label>
+                <input required placeholder="e.g. Malaria, Typhoid..." className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" value={formData.disease} onChange={e=>setFormData({...formData, disease: e.target.value})} />
+              </div>
+
+              {/* Row 4: Department + Bed */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Department</label>
+                  <select className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" value={formData.department} onChange={e=>setFormData({...formData, department: e.target.value})}>
+                    <option>General Medicine</option>
+                    <option>Critical Care</option>
+                    <option>Pediatrics</option>
+                    <option>Obstetrics</option>
+                    <option>Surgery</option>
+                    <option>Orthopedics</option>
+                    <option>Cardiology</option>
+                    <option>Neurology</option>
+                    <option>Oncology</option>
+                    <option>Emergency</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Bed Number</label>
+                  <input required placeholder="e.g. B-101" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" value={formData.bed} onChange={e=>setFormData({...formData, bed: e.target.value})} />
+                </div>
+              </div>
+
+              {/* Row 5: Status + Doctor */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Status</label>
-                  <select className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={formData.status} onChange={e=>setFormData({...formData, status: e.target.value})}>
-                    <option>Admitted</option><option>Critical</option><option>Recovering</option>
+                  <select className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" value={formData.status} onChange={e=>setFormData({...formData, status: e.target.value})}>
+                    <option>Admitted</option>
+                    <option>Critical</option>
+                    <option>Recovering</option>
                   </select>
                 </div>
-                <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Doctor Assigned</label><input required className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl" value={formData.doctor} onChange={e=>setFormData({...formData, doctor: e.target.value})} /></div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Doctor Assigned</label>
+                  <input required placeholder="e.g. Dr. Sharma" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" value={formData.doctor} onChange={e=>setFormData({...formData, doctor: e.target.value})} />
+                </div>
               </div>
-              <button type="submit" className="w-full py-3 mt-4 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg active:scale-95">Admit Patient</button>
+
+              <button type="submit" className="w-full py-3 mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition-colors shadow-lg active:scale-95">
+                Admit Patient
+              </button>
             </form>
           </div>
         </div>

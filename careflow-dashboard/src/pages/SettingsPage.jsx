@@ -89,7 +89,7 @@ const SettingsPage = () => {
                   <div>
                     <h3 className="font-bold text-gray-900">Dr. Admin</h3>
                     <p className="text-sm text-gray-500">Administrator</p>
-                    <button type="button" className="mt-2 text-xs font-bold text-primary hover:underline">Change Avatar</button>
+                    <button type="button" onClick={() => alert("Avatar upload coming soon! Please contact admin to update your profile picture.")} className="mt-2 text-xs font-bold text-primary hover:underline">Change Avatar</button>
                   </div>
                 </div>
 
