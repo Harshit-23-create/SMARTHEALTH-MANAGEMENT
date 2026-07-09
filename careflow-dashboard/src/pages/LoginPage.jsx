@@ -36,6 +36,7 @@ const LoginPage = () => {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [roleError, setRoleError] = useState("");
+  const [loginError, setLoginError] = useState("");
 
   const navigate = useNavigate();
 
@@ -82,6 +83,7 @@ const LoginPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoginError("");
 
     if (!validateForm()) {
       return;
@@ -122,7 +124,7 @@ const LoginPage = () => {
 
     } catch (error) {
       console.error("Login Error:", error);
-      alert(error.message || "Unable to connect to server. Please try again.");
+      setLoginError(error.message || "Unable to connect to server. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -347,6 +349,16 @@ const LoginPage = () => {
                   <span className="text-sm text-gray-600">Remember me</span>
                 </label>
               </div>
+
+              {/* Inline Login Error */}
+              {loginError && (
+                <div className="flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+                  <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-sm text-red-600 font-medium">{loginError}</p>
+                </div>
+              )}
 
               {/* Submit Button */}
               <button
