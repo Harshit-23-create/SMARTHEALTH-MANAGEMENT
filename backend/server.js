@@ -38,7 +38,12 @@ app.use(express.json());
 /* =========================
    MONGODB CONNECTION
 ========================= */
-const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/Medicare";
+// Auto-correct DB name casing: Atlas created it as 'Medicare' (capital M)
+const MONGO_URI = (process.env.MONGO_URI || "mongodb://127.0.0.1:27017/Medicare")
+  .replace("/medicare?", "/Medicare?")
+  .replace("/medicare\n", "/Medicare\n")
+  .replace(/\/medicare$/, "/Medicare");
+
 mongoose
   .connect(MONGO_URI)
   .then(() => console.log("MongoDB Connected ✅"))
