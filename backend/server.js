@@ -24,6 +24,7 @@ const allowedOrigins = process.env.FRONTEND_URL
       "http://localhost:8081",
       "http://localhost:8082",
       "http://localhost:3000",
+      "https://smarthealth-management.vercel.app",
     ];
 
 app.use(
