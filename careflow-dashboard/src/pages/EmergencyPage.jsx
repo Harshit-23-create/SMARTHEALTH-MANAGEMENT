@@ -1,25 +1,26 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { useTranslation } from "react-i18next";
 import {
   AlertTriangle, Truck, MapPin, Clock, Phone,
-  CheckCircle, X, Activity, Siren, Radio,
-  HeartPulse, User, Zap, Shield, TrendingUp,
+  CheckCircle, X, Siren, Radio,
+  HeartPulse, User, Shield, TrendingUp,
 } from "lucide-react";
 import LiveMap from "@/components/LiveMap";
 
 /* ── Priority config ─────────────────────────────────────── */
 const PRIORITIES = [
-  { id: "Low",      color: "from-emerald-500 to-green-500",    bg: "bg-emerald-50",   border: "border-emerald-300",   text: "text-emerald-700", dot: "bg-emerald-500" },
-  { id: "Medium",   color: "from-sky-500 to-blue-500",         bg: "bg-sky-50",       border: "border-sky-300",       text: "text-sky-700",     dot: "bg-sky-500"     },
-  { id: "High",     color: "from-amber-500 to-orange-500",     bg: "bg-amber-50",     border: "border-amber-300",     text: "text-amber-700",   dot: "bg-amber-500"   },
-  { id: "Critical", color: "from-red-600 to-rose-500",         bg: "bg-red-50",       border: "border-red-300",       text: "text-red-700",     dot: "bg-red-500"     },
+  { id: "Low",      color: "from-emerald-500 to-green-500",    bg: "bg-emerald-50 dark:bg-emerald-950/40",   border: "border-emerald-300 dark:border-emerald-800",   text: "text-emerald-700 dark:text-emerald-300", dot: "bg-emerald-500" },
+  { id: "Medium",   color: "from-sky-500 to-blue-500",         bg: "bg-sky-50 dark:bg-sky-950/40",       border: "border-sky-300 dark:border-sky-800",       text: "text-sky-700 dark:text-sky-300",     dot: "bg-sky-500"     },
+  { id: "High",     color: "from-amber-500 to-orange-500",     bg: "bg-amber-50 dark:bg-amber-950/40",     border: "border-amber-300 dark:border-amber-800",     text: "text-amber-700 dark:text-amber-300",   dot: "bg-amber-500"   },
+  { id: "Critical", color: "from-red-600 to-rose-500",         bg: "bg-red-50 dark:bg-red-950/40",       border: "border-red-300 dark:border-red-800",       text: "text-red-700 dark:text-red-300",     dot: "bg-red-500"     },
 ];
 
 const getPriority = (id) => PRIORITIES.find((p) => p.id === id) || PRIORITIES[2];
 
 /* ── Stat card ───────────────────────────────────────────── */
 const StatCard = ({ label, value, icon: Icon, gradient, pulse }) => (
-  <div className={`relative overflow-hidden rounded-2xl p-5 text-white bg-gradient-to-br ${gradient}`}>
+  <div className={`relative overflow-hidden rounded-2xl p-5 text-white bg-gradient-to-br ${gradient} shadow-lg`}>
     <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-white/10" />
     <div className="absolute -bottom-6 -left-4 w-20 h-20 rounded-full bg-white/5" />
     <div className="relative">
@@ -40,6 +41,7 @@ const StatCard = ({ label, value, icon: Icon, gradient, pulse }) => (
 );
 
 const EmergencyPage = () => {
+  const { t } = useTranslation();
   const [priority, setPriority] = useState("High");
   const [emergencyForm, setEmergencyForm] = useState({ patientName: "", condition: "", age: "" });
   const [ambulanceForm, setAmbulanceForm] = useState({ pickup: "", contact: "", type: "BLS" });
@@ -78,7 +80,7 @@ const EmergencyPage = () => {
       setPriority("High");
       setLoading("");
       showToast(`🚨 Emergency request for ${r.patientName} submitted! Priority: ${priority}`);
-    }, 1000);
+    }, 800);
   };
 
   const handleAmbulanceDispatch = (e) => {
@@ -100,24 +102,24 @@ const EmergencyPage = () => {
       setDispatchedAmbulances((prev) => [d, ...prev]);
       setAmbulanceForm({ pickup: "", contact: "", type: "BLS" });
       setLoading("");
-      showToast(`🚑 ${d.unit} dispatched! ETA: ${d.eta}`);
-    }, 1200);
+      showToast(`🚑 Ambulance ${d.unit} dispatched to ${d.pickup}! ETA: ${d.eta}`);
+    }, 800);
   };
 
-  const pendingCount    = submittedRequests.filter((r) => r.status === "pending").length;
-  const fulfilledCount  = submittedRequests.filter((r) => r.status === "fulfilled").length;
-  const criticalCount   = submittedRequests.filter((r) => r.priority === "Critical" && r.status === "pending").length;
+  const pendingCount   = submittedRequests.filter((r) => r.status === "pending").length;
+  const fulfilledCount = submittedRequests.filter((r) => r.status === "fulfilled").length;
+  const criticalCount  = submittedRequests.filter((r) => r.priority === "Critical" && r.status === "pending").length;
 
   return (
     <DashboardLayout>
-      {/* ── Toast ───────────────────────────────────────────── */}
+      {/* Toast banner */}
       {toast && (
         <div
-          className={`fixed top-6 right-6 z-[9999] flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl
-            border backdrop-blur-md animate-slide-up max-w-sm
-            ${toast.type === "error"
-              ? "bg-white/95 border-red-200 text-red-700"
-              : "bg-white/95 border-green-200 text-green-700"
+          className={`fixed top-20 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border
+            backdrop-blur-md transition-all animate-bounce ${
+              toast.type === "error"
+                ? "bg-red-50 dark:bg-red-950/80 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300"
+                : "bg-green-50 dark:bg-green-950/80 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300"
             }`}
         >
           {toast.type === "error"
@@ -131,25 +133,25 @@ const EmergencyPage = () => {
         </div>
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-7xl mx-auto pb-10">
         {/* ── Header ──────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-red-100">
-                <Siren className="w-6 h-6 text-red-600" />
+              <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400">
+                <Siren className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-2xl font-black text-gray-900">Emergency Control</h1>
-                <p className="text-sm text-gray-500">Real-time emergency coordination & ambulance dispatch</p>
+                <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{t("emergency.title")}</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t("emergency.subtitle")}</p>
               </div>
             </div>
           </div>
           {/* Critical alert badge */}
           {criticalCount > 0 && (
-            <div className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl shadow-lg animate-pulse">
+            <div className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl shadow-lg animate-pulse text-sm font-bold">
               <AlertTriangle className="w-4 h-4" />
-              <span className="text-sm font-bold">{criticalCount} Critical Alert{criticalCount > 1 ? "s" : ""}!</span>
+              <span>{criticalCount} Critical Alert{criticalCount > 1 ? "s" : ""}!</span>
             </div>
           )}
         </div>
@@ -166,14 +168,13 @@ const EmergencyPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
           {/* Emergency Bed Request */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            {/* Card header */}
-            <div className="px-6 py-4 bg-gradient-to-r from-red-600 to-rose-500 flex items-center gap-3">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden transition-colors">
+            <div className="px-6 py-4 bg-gradient-to-r from-red-600 to-rose-600 flex items-center gap-3">
               <div className="p-1.5 rounded-lg bg-white/20">
                 <HeartPulse className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">Emergency Bed Request</h3>
+                <h3 className="text-sm font-bold text-white">{t("emergency.requestEmergency")}</h3>
                 <p className="text-xs text-red-100">Submit urgent patient intake</p>
               </div>
             </div>
@@ -181,46 +182,43 @@ const EmergencyPage = () => {
             <form onSubmit={handleEmergencySubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Patient Name *</label>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t("patients.patientName")} *</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                     <input
                       value={emergencyForm.patientName}
                       onChange={(e) => setEmergencyForm({ ...emergencyForm, patientName: e.target.value })}
                       placeholder="Full name"
-                      className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm
-                        focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 transition-all"
+                      className="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Age</label>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t("patients.age")}</label>
                   <input
                     type="number"
                     min="0" max="150"
                     value={emergencyForm.age}
                     onChange={(e) => setEmergencyForm({ ...emergencyForm, age: e.target.value })}
                     placeholder="Years"
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm
-                      focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 transition-all"
+                    className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Condition / Complaint *</label>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t("emergency.condition")} *</label>
                 <input
                   value={emergencyForm.condition}
                   onChange={(e) => setEmergencyForm({ ...emergencyForm, condition: e.target.value })}
                   placeholder="e.g., Cardiac Arrest, Severe Trauma..."
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm
-                    focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 transition-all"
+                  className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
                 />
               </div>
 
               {/* Priority selector */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-2">Priority Level</label>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">{t("emergency.priority")}</label>
                 <div className="grid grid-cols-4 gap-2">
                   {PRIORITIES.map((p) => (
                     <button
@@ -233,12 +231,7 @@ const EmergencyPage = () => {
                           : `${p.bg} ${p.text} ${p.border} hover:scale-105`
                         }`}
                     >
-                      {priority === p.id && (
-                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full border-2 border-current flex items-center justify-center">
-                          <span className={`w-1.5 h-1.5 rounded-full ${p.dot}`} />
-                        </span>
-                      )}
-                      {p.id}
+                      {t(`emergency.${p.id.toLowerCase()}`) || p.id}
                     </button>
                   ))}
                 </div>
@@ -247,21 +240,16 @@ const EmergencyPage = () => {
               <button
                 type="submit"
                 disabled={loading === "emergency"}
-                className="w-full py-3 rounded-xl font-bold text-sm text-white
-                  bg-gradient-to-r from-red-600 to-rose-500
-                  hover:from-red-700 hover:to-rose-600
-                  shadow-lg shadow-red-200
-                  disabled:opacity-60 transition-all duration-200 flex items-center justify-center gap-2
-                  hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0"
+                className="w-full py-3 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-lg shadow-red-500/20 disabled:opacity-60 transition-all flex items-center justify-center gap-2"
               >
                 {loading === "emergency" ? (
                   <>
-                    <Activity className="w-4 h-4 animate-pulse" />
-                    Submitting Request...
+                    <Radio className="w-4 h-4 animate-spin" />
+                    Submitting...
                   </>
                 ) : (
                   <>
-                    <Zap className="w-4 h-4" />
+                    <HeartPulse className="w-4 h-4" />
                     Submit Emergency Request
                   </>
                 )}
@@ -270,35 +258,33 @@ const EmergencyPage = () => {
           </div>
 
           {/* Ambulance Dispatch */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            {/* Card header */}
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden transition-colors">
             <div className="px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-500 flex items-center gap-3">
               <div className="p-1.5 rounded-lg bg-white/20">
                 <Truck className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">Dispatch Ambulance</h3>
-                <p className="text-xs text-amber-100">Assign & track ambulance unit</p>
+                <h3 className="text-sm font-bold text-white">{t("emergency.dispatchAmbulance")}</h3>
+                <p className="text-xs text-amber-100">Deploy nearest available unit</p>
               </div>
             </div>
 
             <form onSubmit={handleAmbulanceDispatch} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Pickup Location *</label>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t("emergency.pickupLocation")} *</label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                   <input
                     value={ambulanceForm.pickup}
                     onChange={(e) => setAmbulanceForm({ ...ambulanceForm, pickup: e.target.value })}
-                    placeholder="Street address or landmark"
-                    className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm
-                      focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition-all"
+                    placeholder="Enter street, landmark, area"
+                    className="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Contact Number *</label>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Contact Number *</label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                   <input
@@ -306,14 +292,13 @@ const EmergencyPage = () => {
                     value={ambulanceForm.contact}
                     onChange={(e) => setAmbulanceForm({ ...ambulanceForm, contact: e.target.value })}
                     placeholder="10-digit mobile number"
-                    className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm
-                      focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition-all"
+                    className="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Ambulance Type</label>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Ambulance Type</label>
                 <div className="grid grid-cols-3 gap-2">
                   {["BLS", "ALS", "ICU"].map((type) => (
                     <button
@@ -323,25 +308,19 @@ const EmergencyPage = () => {
                       className={`py-2 rounded-xl text-xs font-bold border-2 transition-all duration-200
                         ${ambulanceForm.type === type
                           ? "bg-gradient-to-br from-amber-500 to-orange-500 text-white border-transparent shadow-md scale-105"
-                          : "bg-amber-50 text-amber-700 border-amber-200 hover:scale-105"
+                          : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
                         }`}
                     >
                       {type}
                     </button>
                   ))}
                 </div>
-                <p className="text-[10px] text-gray-400 mt-1">BLS = Basic · ALS = Advanced · ICU = Critical Care</p>
               </div>
 
               <button
                 type="submit"
                 disabled={loading === "ambulance"}
-                className="w-full py-3 rounded-xl font-bold text-sm text-white
-                  bg-gradient-to-r from-amber-500 to-orange-500
-                  hover:from-amber-600 hover:to-orange-600
-                  shadow-lg shadow-amber-200
-                  disabled:opacity-60 transition-all duration-200 flex items-center justify-center gap-2
-                  hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0"
+                className="w-full py-3 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-lg shadow-amber-500/20 disabled:opacity-60 transition-all flex items-center justify-center gap-2"
               >
                 {loading === "ambulance" ? (
                   <>
@@ -351,96 +330,53 @@ const EmergencyPage = () => {
                 ) : (
                   <>
                     <Truck className="w-4 h-4" />
-                    Dispatch Ambulance
+                    {t("emergency.dispatchAmbulance")}
                   </>
                 )}
               </button>
             </form>
-
-            {/* Dispatched units list */}
-            {dispatchedAmbulances.length > 0 && (
-              <div className="px-6 pb-6 space-y-2">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-                  Active Dispatches
-                </p>
-                {dispatchedAmbulances.slice(0, 3).map((d) => (
-                  <div
-                    key={d.id}
-                    className="flex items-center gap-3 bg-gradient-to-r from-amber-50 to-orange-50
-                      rounded-xl px-3 py-2.5 border border-amber-100"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-400
-                      flex items-center justify-center text-white text-sm flex-shrink-0">
-                      🚑
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-amber-800">{d.unit} · {d.type || "BLS"}</p>
-                      <p className="text-[10px] text-amber-600 truncate">{d.pickup}</p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-xs font-black text-orange-600 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />{d.eta}
-                      </p>
-                      <p className="text-[10px] text-gray-400">{d.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
         {/* ── Requests table ──────────────────────────────────── */}
         {submittedRequests.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden transition-colors">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="p-1.5 rounded-lg bg-red-100">
-                  <Shield className="w-4 h-4 text-red-600" />
+                <div className="p-1.5 rounded-lg bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400">
+                  <Shield className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">Emergency Requests</h3>
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">{t("emergency.activeAlerts")}</h3>
                   <p className="text-[11px] text-gray-400">{submittedRequests.length} total · {pendingCount} pending</p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-[10px] font-bold text-red-600 uppercase tracking-wide">Live Queue</span>
+                <span className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">Live Queue</span>
               </div>
             </div>
 
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-gray-50 dark:divide-gray-800">
               {submittedRequests.map((req) => {
                 const p = getPriority(req.priority);
                 return (
-                  <div
-                    key={req.id}
-                    className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50/60 transition-colors"
-                  >
-                    {/* Priority dot */}
-                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${p.dot}
-                      ${req.priority === "Critical" && req.status === "pending" ? "animate-pulse shadow-[0_0_8px]" : ""}`}
-                    />
-
-                    {/* Info */}
+                  <div key={req.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50/60 dark:hover:bg-gray-800/40 transition-colors">
+                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${p.dot}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold text-gray-900 truncate">{req.patientName}</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{req.patientName}</p>
                         {req.age && <span className="text-[10px] text-gray-400">• {req.age}y</span>}
                       </div>
-                      <p className="text-xs text-gray-500 truncate">{req.condition}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{req.condition}</p>
                     </div>
 
-                    {/* Priority badge */}
-                    <span className={`hidden sm:inline-flex text-[10px] font-bold px-2.5 py-1 rounded-full border
-                      ${p.bg} ${p.text} ${p.border}`}>
+                    <span className={`hidden sm:inline-flex text-[10px] font-bold px-2.5 py-1 rounded-full border ${p.bg} ${p.text} ${p.border}`}>
                       {req.priority}
                     </span>
 
-                    {/* Time */}
                     <span className="text-xs text-gray-400 hidden sm:block flex-shrink-0">{req.time}</span>
 
-                    {/* Action */}
                     {req.status === "pending" ? (
                       <button
                         onClick={() =>
@@ -448,15 +384,12 @@ const EmergencyPage = () => {
                             prev.map((r) => r.id === req.id ? { ...r, status: "fulfilled" } : r)
                           )
                         }
-                        className="flex-shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-lg
-                          bg-emerald-50 text-emerald-700 border border-emerald-200
-                          hover:bg-emerald-100 transition-colors"
+                        className="flex-shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition-colors"
                       >
                         ✓ Fulfill
                       </button>
                     ) : (
-                      <span className="flex-shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-lg
-                        bg-gray-100 text-gray-400">
+                      <span className="flex-shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-400">
                         Fulfilled
                       </span>
                     )}
@@ -468,59 +401,21 @@ const EmergencyPage = () => {
         )}
 
         {/* ── Live Map ────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          {/* Map header */}
-          <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100">
+        <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden transition-colors">
+          <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
             <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded-lg bg-blue-100">
-                <MapPin className="w-4 h-4 text-blue-600" />
+              <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
+                <MapPin className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-gray-900">Live Ambulance Tracking</h3>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">{t("emergency.liveTracking")}</h3>
                 <p className="text-[11px] text-gray-400">Real-time GPS · Auto-updates every 2s</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Legend */}
-              <div className="hidden sm:flex items-center gap-3 text-[10px] font-semibold text-gray-500">
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded-full bg-blue-500 inline-block" /> Hospital
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded-full bg-red-500 inline-block" /> Patient
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" /> Ambulance
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-[10px] font-bold text-green-700 uppercase tracking-wide">Live</span>
               </div>
             </div>
           </div>
 
           <div className="p-4">
             <LiveMap />
-          </div>
-
-          {/* Map footer stats */}
-          <div className="px-6 pb-5 grid grid-cols-3 gap-3">
-            {[
-              { label: "Hospital",    val: "City General",  icon: "🏥", color: "blue"  },
-              { label: "Ambulance",   val: "AMB-003 · BLS", icon: "🚑", color: "amber" },
-              { label: "Patient",     val: "Sector 14, ND", icon: "📍", color: "red"   },
-            ].map(({ label, val, icon, color }) => (
-              <div key={label}
-                className={`flex items-center gap-2.5 bg-${color}-50 rounded-xl px-3 py-2.5 border border-${color}-100`}
-              >
-                <span className="text-lg">{icon}</span>
-                <div>
-                  <p className={`text-[10px] font-bold text-${color}-600 uppercase tracking-wide`}>{label}</p>
-                  <p className="text-xs font-semibold text-gray-700 truncate">{val}</p>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </div>

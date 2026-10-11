@@ -6,11 +6,14 @@ import "leaflet/dist/leaflet.css";
 import "./utils/leafletFix";
 import "./i18n";
 import { NotificationProvider } from "./context/NotificationContext.jsx";
+import { ThemeProvider } from "./context/ThemeContext.jsx";
 
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>
-    <NotificationProvider>
-      <App />
-    </NotificationProvider>
+    <ThemeProvider>
+      <NotificationProvider>
+        <App />
+      </NotificationProvider>
+    </ThemeProvider>
   </BrowserRouter>
 );

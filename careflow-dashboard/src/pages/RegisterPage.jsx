@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API_BASE_URL from "@/utils/api";
+import { useTranslation } from "react-i18next";
+import { useTheme } from "@/context/ThemeContext";
 import {
   Heart,
   Mail,
@@ -14,18 +16,23 @@ import {
   Clock,
   Hospital,
   CheckCircle,
-  User
+  User,
+  Globe,
+  Sun,
+  Moon
 } from "lucide-react";
 import hospitalBg from "@/assets/hospital-bg.jpg";
 
 const roles = [
-  { value: "Admin", label: "Admin", icon: Shield, color: "from-purple-500 to-purple-600", bgColor: "bg-purple-50", textColor: "text-purple-700", borderColor: "border-purple-200" },
-  { value: "Doctor", label: "Doctor", icon: Activity, color: "from-blue-500 to-blue-600", bgColor: "bg-blue-50", textColor: "text-blue-700", borderColor: "border-blue-200" },
-  { value: "Nurse", label: "Nurse", icon: Users, color: "from-green-500 to-green-600", bgColor: "bg-green-50", textColor: "text-green-700", borderColor: "border-green-200" },
-  { value: "Receptionist", label: "Receptionist", icon: Clock, color: "from-amber-500 to-amber-600", bgColor: "bg-amber-50", textColor: "text-amber-700", borderColor: "border-amber-200" }
+  { value: "Admin", label: "Admin", icon: Shield, color: "from-purple-500 to-purple-600", bgColor: "bg-purple-50 dark:bg-purple-950/40", textColor: "text-purple-700 dark:text-purple-300", borderColor: "border-purple-200 dark:border-purple-800" },
+  { value: "Doctor", label: "Doctor", icon: Activity, color: "from-blue-500 to-blue-600", bgColor: "bg-blue-50 dark:bg-blue-950/40", textColor: "text-blue-700 dark:text-blue-300", borderColor: "border-blue-200 dark:border-blue-800" },
+  { value: "Nurse", label: "Nurse", icon: Users, color: "from-green-500 to-green-600", bgColor: "bg-green-50 dark:bg-green-950/40", textColor: "text-green-700 dark:text-green-300", borderColor: "border-green-200 dark:border-green-800" },
+  { value: "Receptionist", label: "Receptionist", icon: Clock, color: "from-amber-500 to-amber-600", bgColor: "bg-amber-50 dark:bg-amber-950/40", textColor: "text-amber-700 dark:text-amber-300", borderColor: "border-amber-200 dark:border-amber-800" }
 ];
 
 const RegisterPage = () => {
+  const { t, i18n } = useTranslation();
+  const { isDark, toggleTheme } = useTheme();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,12 +47,13 @@ const RegisterPage = () => {
   const [roleError, setRoleError] = useState("");
   const [registerError, setRegisterError] = useState("");
   const [registerSuccess, setRegisterSuccess] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
 
   const navigate = useNavigate();
 
   const validateForm = () => {
     let isValid = true;
-    
+
     if (!name.trim()) {
       setNameError("Full name is required");
       isValid = false;
@@ -115,11 +123,13 @@ const RegisterPage = () => {
       }
 
       setRegisterSuccess(true);
-      setTimeout(() => navigate("/login"), 2000);
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
 
     } catch (error) {
       console.error("Register Error:", error);
-      setRegisterError(error.message || "Unable to register. Please try again.");
+      setRegisterError(error.message || "Unable to connect to server. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -133,87 +143,124 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+      {/* Top right language & theme toggle controls */}
+      <div className="absolute top-4 right-4 z-50 flex items-center gap-2 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-800 shadow-sm">
+        <div className="relative">
+          <button
+            onClick={() => setLangOpen(!langOpen)}
+            className="flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>{i18n.language.toUpperCase()}</span>
+            <ChevronDown className="w-3 h-3 text-gray-400" />
+          </button>
+          {langOpen && (
+            <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden py-1 z-50">
+              <button
+                onClick={() => { i18n.changeLanguage("en"); setLangOpen(false); }}
+                className={`w-full text-left px-3 py-2 text-xs transition ${i18n.language === "en" ? "font-bold text-primary bg-primary/10" : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"}`}
+              >
+                🇺🇸 English
+              </button>
+              <button
+                onClick={() => { i18n.changeLanguage("hi"); setLangOpen(false); }}
+                className={`w-full text-left px-3 py-2 text-xs transition ${i18n.language === "hi" ? "font-bold text-primary bg-primary/10" : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"}`}
+              >
+                🇮🇳 हिंदी (Hindi)
+              </button>
+              <button
+                onClick={() => { i18n.changeLanguage("es"); setLangOpen(false); }}
+                className={`w-full text-left px-3 py-2 text-xs transition ${i18n.language === "es" ? "font-bold text-primary bg-primary/10" : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"}`}
+              >
+                🇪🇸 Español
+              </button>
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={toggleTheme}
+          title={isDark ? "Switch to Light mode" : "Switch to Dark mode"}
+          className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition"
+        >
+          {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+        </button>
+      </div>
+
       {/* Left side - Hospital branding */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-purple-700 opacity-90"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-800 opacity-95"></div>
         <div 
           className="absolute inset-0 bg-cover bg-center mix-blend-overlay"
           style={{ backgroundImage: `url(${hospitalBg})` }}
         ></div>
         
-        <div className="relative z-10 flex flex-col justify-between p-16 text-white">
+        <div className="relative z-10 flex flex-col justify-between p-16 text-white w-full">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
-              <Heart className="w-8 h-8" />
+            <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md border border-white/20 shadow-lg">
+              <Heart className="w-8 h-8 text-white" />
             </div>
-            <span className="text-3xl font-bold">MediCare Pro</span>
+            <div>
+              <span className="text-3xl font-extrabold tracking-tight">MediCare Pro</span>
+              <p className="text-xs text-white/70 font-medium">Smart Healthcare Management</p>
+            </div>
           </div>
 
-          <div className="space-y-8">
-            <h1 className="text-5xl font-bold leading-tight">
+          <div className="space-y-6 max-w-lg">
+            <h1 className="text-5xl font-black leading-tight tracking-tight">
               Join the Hospital Management System
             </h1>
             
-            <p className="text-xl text-white/90 leading-relaxed">
-              Create an account to gain portal access and start coordinating patient care operations seamlessly.
+            <p className="text-lg text-white/90 leading-relaxed font-normal">
+              Register a staff account to access patient charts, monitor bed availability in real time, and coordinate clinical care.
             </p>
 
-            <div className="grid grid-cols-2 gap-6 pt-8">
+            <div className="grid grid-cols-2 gap-4 pt-4">
               {[
-                { label: "Active Users", value: "10,000+", icon: Users },
-                { label: "Hospitals", value: "500+", icon: Hospital },
-                { label: "Success Rate", value: "99.9%", icon: CheckCircle },
-                { label: "Support 24/7", value: "Always", icon: Clock }
+                { label: "Active Hospitals", value: "500+", icon: Hospital },
+                { label: "Staff Members", value: "10,000+", icon: Users },
+                { label: "Uptime SLA", value: "99.9%", icon: CheckCircle },
+                { label: "Live Telemetry", value: "Always On", icon: Clock }
               ].map((stat, index) => (
-                <div key={index} className="flex items-center space-x-3">
-                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                    <stat.icon className="w-5 h-5" />
+                <div key={index} className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm p-3 rounded-2xl border border-white/10">
+                  <div className="p-2 bg-white/20 rounded-xl">
+                    <stat.icon className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold">{stat.value}</div>
-                    <div className="text-sm text-white/80">{stat.label}</div>
+                    <div className="text-xl font-bold">{stat.value}</div>
+                    <div className="text-xs text-white/80">{stat.label}</div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="text-white/60 text-sm">
-            © 2024 MediCare Pro. All rights reserved.
+          <div className="text-white/60 text-xs">
+            © 2026 MediCare Pro HMS. Enterprise Edition.
           </div>
         </div>
       </div>
 
       {/* Right side - Register form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center justify-center space-x-2 mb-8">
-            <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl">
-              <Heart className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              MediCare HMS
-            </span>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-10 overflow-y-auto">
+        <div className="w-full max-w-md py-8">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 p-8 sm:p-10 transition-colors">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h2>
-              <p className="text-gray-500">
+              <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-1 tracking-tight">Create Account</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 Register a new profile to access the dashboard
               </p>
             </div>
 
             <form onSubmit={handleRegister} className="space-y-4">
               {/* Name Input */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className={`absolute left-3 top-3.5 w-5 h-5 ${nameError ? 'text-red-400' : 'text-gray-400'}`} />
+                  <User className={`absolute left-3.5 top-3.5 w-4 h-4 ${nameError ? 'text-red-400' : 'text-gray-400'}`} />
                   <input
                     type="text"
                     placeholder="Dr. John Doe"
@@ -222,63 +269,63 @@ const RegisterPage = () => {
                       setName(e.target.value);
                       setNameError("");
                     }}
-                    className={`w-full pl-10 pr-4 py-3.5 border ${nameError ? 'border-red-300 focus:ring-red-200' : 'border-gray-200 focus:ring-blue-200'} rounded-xl focus:outline-none focus:ring-4 transition-all duration-200`}
+                    className={`w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border ${nameError ? 'border-red-400' : 'border-gray-200 dark:border-gray-700'} rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900 transition text-sm`}
                   />
                 </div>
                 {nameError && (
-                  <p className="text-sm text-red-500 mt-1">{nameError}</p>
+                  <p className="text-xs text-red-500 mt-1">{nameError}</p>
                 )}
               </div>
 
               {/* Role Selection */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">
                   Select Your Role
                 </label>
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setRoleOpen(!roleOpen)}
-                    className={`w-full border ${roleError ? 'border-red-300' : 'border-gray-200'} rounded-xl px-4 py-3 flex items-center justify-between bg-white hover:border-gray-300 transition-all duration-200 ${selectedRoleData ? selectedRoleData.bgColor : ''}`}
+                    className={`w-full border ${roleError ? 'border-red-400' : 'border-gray-200 dark:border-gray-700'} rounded-xl px-4 py-3 flex items-center justify-between bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 transition ${selectedRoleData ? selectedRoleData.bgColor : ''}`}
                   >
                     <div className="flex items-center space-x-3">
                       {selectedRoleData ? (
                         <>
-                          <div className={`p-2 rounded-lg ${selectedRoleData.bgColor}`}>
-                            <selectedRoleData.icon className={`w-5 h-5 ${selectedRoleData.textColor}`} />
+                          <div className={`p-1.5 rounded-lg ${selectedRoleData.bgColor}`}>
+                            <selectedRoleData.icon className={`w-4 h-4 ${selectedRoleData.textColor}`} />
                           </div>
-                          <span className={`font-medium ${selectedRoleData.textColor}`}>
+                          <span className={`font-semibold text-sm ${selectedRoleData.textColor}`}>
                             {selectedRoleData.label}
                           </span>
                         </>
                       ) : (
                         <>
-                          <Hospital className="w-5 h-5 text-gray-400" />
-                          <span className="text-gray-500">Choose your role</span>
+                          <Hospital className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-400">Choose your role</span>
                         </>
                       )}
                     </div>
-                    <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${roleOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${roleOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {roleOpen && (
-                    <div className="absolute w-full bg-white border border-gray-200 rounded-xl mt-2 z-20 shadow-lg overflow-hidden">
+                    <div className="absolute w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl mt-2 z-30 shadow-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
                       {roles.map((r) => (
                         <button
                           key={r.value}
                           type="button"
                           onClick={() => handleRoleSelect(r)}
-                          className="w-full px-4 py-3 flex items-center space-x-3 hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 last:border-0"
+                          className="w-full px-4 py-3 flex items-center space-x-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition text-left"
                         >
                           <div className={`p-2 rounded-lg ${r.bgColor}`}>
-                            <r.icon className={`w-5 h-5 ${r.textColor}`} />
+                            <r.icon className={`w-4 h-4 ${r.textColor}`} />
                           </div>
-                          <div className="flex-1 text-left">
-                            <div className="font-medium text-gray-900">{r.label}</div>
-                            <div className="text-sm text-gray-500">Register as {r.label}</div>
+                          <div className="flex-1">
+                            <div className="font-bold text-sm text-gray-900 dark:text-white">{r.label}</div>
+                            <div className="text-xs text-gray-400">Access as {r.label}</div>
                           </div>
                           {role === r.value && (
-                            <CheckCircle className="w-5 h-5 text-green-500" />
+                            <CheckCircle className="w-4 h-4 text-green-500" />
                           )}
                         </button>
                       ))}
@@ -286,80 +333,73 @@ const RegisterPage = () => {
                   )}
                 </div>
                 {roleError && (
-                  <p className="text-sm text-red-500 mt-1">{roleError}</p>
+                  <p className="text-xs text-red-500 mt-1">{roleError}</p>
                 )}
               </div>
 
               {/* Email Input */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className={`absolute left-3 top-3.5 w-5 h-5 ${emailError ? 'text-red-400' : 'text-gray-400'}`} />
+                  <Mail className={`absolute left-3.5 top-3.5 w-4 h-4 ${emailError ? 'text-red-400' : 'text-gray-400'}`} />
                   <input
                     type="email"
-                    placeholder="doctor@medicare.com"
+                    placeholder="doctor@hospital.com"
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
                       setEmailError("");
                     }}
-                    className={`w-full pl-10 pr-4 py-3.5 border ${emailError ? 'border-red-300 focus:ring-red-200' : 'border-gray-200 focus:ring-blue-200'} rounded-xl focus:outline-none focus:ring-4 transition-all duration-200`}
+                    className={`w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border ${emailError ? 'border-red-400' : 'border-gray-200 dark:border-gray-700'} rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900 transition text-sm`}
                   />
                 </div>
                 {emailError && (
-                  <p className="text-sm text-red-500 mt-1">{emailError}</p>
+                  <p className="text-xs text-red-500 mt-1">{emailError}</p>
                 )}
               </div>
 
               {/* Password Input */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className={`absolute left-3 top-3.5 w-5 h-5 ${passwordError ? 'text-red-400' : 'text-gray-400'}`} />
+                  <Lock className={`absolute left-3.5 top-3.5 w-4 h-4 ${passwordError ? 'text-red-400' : 'text-gray-400'}`} />
                   <input
                     type={showPassword ? "text" : "password"}
-                    placeholder="Choose password (min 6 chars)"
+                    placeholder="Minimum 6 characters"
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
                       setPasswordError("");
                     }}
-                    className={`w-full pl-10 pr-12 py-3.5 border ${passwordError ? 'border-red-300 focus:ring-red-200' : 'border-gray-200 focus:ring-blue-200'} rounded-xl focus:outline-none focus:ring-4 transition-all duration-200`}
+                    className={`w-full pl-10 pr-12 py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border ${passwordError ? 'border-red-400' : 'border-gray-200 dark:border-gray-700'} rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900 transition text-sm`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3.5 top-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
                 {passwordError && (
-                  <p className="text-sm text-red-500 mt-1">{passwordError}</p>
+                  <p className="text-xs text-red-500 mt-1">{passwordError}</p>
                 )}
               </div>
 
-              {/* Inline Register Error */}
+              {/* Errors/Success */}
               {registerError && (
-                <div className="flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-xl">
-                  <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  <p className="text-sm text-red-600 font-medium">{registerError}</p>
+                <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl">
+                  <p className="text-xs text-red-600 dark:text-red-400 font-semibold">{registerError}</p>
                 </div>
               )}
 
-              {/* Inline Register Success */}
               {registerSuccess && (
-                <div className="flex items-center space-x-2 p-3 bg-green-50 border border-green-200 rounded-xl">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <p className="text-sm text-green-600 font-medium">Registered successfully! Redirecting to login... ✅</p>
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">Registration successful! Redirecting to login...</p>
                 </div>
               )}
 
@@ -367,26 +407,26 @@ const RegisterPage = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3.5 rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-blue-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 mt-4"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3.5 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-4 focus:ring-blue-200 dark:focus:ring-blue-900 transition shadow-lg shadow-blue-500/20 disabled:opacity-50 text-sm flex items-center justify-center space-x-2"
               >
                 {isLoading ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     <span>Registering...</span>
                   </>
                 ) : (
-                  <span>Register</span>
+                  <span>Create Staff Account</span>
                 )}
               </button>
 
-              <div className="text-center text-sm text-gray-500 mt-4">
+              <div className="text-center text-xs text-gray-500 dark:text-gray-400 pt-2">
                 Already have an account?{" "}
                 <button
                   type="button"
                   onClick={() => navigate("/login")}
-                  className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+                  className="text-blue-600 dark:text-blue-400 hover:underline font-bold transition"
                 >
-                  Sign In
+                  Sign In Here
                 </button>
               </div>
             </form>

@@ -2,7 +2,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useNotifications } from "@/context/NotificationContext";
 import { useTranslation } from "react-i18next";
 import {
-  BarChart3, TrendingUp, Users, Activity,
+  BarChart3, TrendingUp,
   Download, Calendar, ChevronDown, PieChart as PieChartIcon
 } from "lucide-react";
 import { downloadFile } from "@/utils/downloadHelper";
@@ -36,11 +36,11 @@ const patientDemographics = [
 ];
 
 const KPICard = ({ title, value, subtitle, trend, isPositive }) => (
-  <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-lg transition-all">
-    <p className="text-gray-500 font-bold text-sm mb-2">{title}</p>
+  <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-lg transition-all">
+    <p className="text-gray-500 dark:text-gray-400 font-bold text-xs uppercase tracking-wider mb-2">{title}</p>
     <div className="flex items-end gap-3 mb-2">
-      <h3 className="text-3xl font-black text-gray-900">{value}</h3>
-      <span className={`flex items-center text-sm font-bold mb-1 ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+      <h3 className="text-3xl font-black text-gray-900 dark:text-white">{value}</h3>
+      <span className={`flex items-center text-xs font-bold mb-1 ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
         {isPositive ? <TrendingUp className="w-4 h-4 mr-1" /> : <TrendingUp className="w-4 h-4 mr-1 rotate-180" />}
         {trend}
       </span>
@@ -60,16 +60,16 @@ const AnalyticsPage = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-purple-100 rounded-2xl">
-              <BarChart3 className="w-6 h-6 text-purple-600" />
+            <div className="p-3 bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 rounded-2xl">
+              <BarChart3 className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-gray-900">{t("nav.analytics")} & Reports</h1>
-              <p className="text-sm font-medium text-gray-500">Financial and operational performance metrics</p>
+              <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{t("analytics.title")}</h1>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t("analytics.subtitle")}</p>
             </div>
           </div>
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 bg-white rounded-xl text-gray-700 hover:bg-gray-50 font-bold transition-colors shadow-sm">
+            <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 font-bold transition-colors shadow-sm text-sm">
               <Calendar className="w-4 h-4" /> This Year <ChevronDown className="w-4 h-4" />
             </button>
             <button 
@@ -77,25 +77,25 @@ const AnalyticsPage = () => {
                 push("system", "Report Exported", "The analytics report has been downloaded.");
                 downloadFile("analytics_report.csv", "Metric,Value\nTotal Revenue,$880.5K\nTotal Expenses,$543.0K\nPatient Volume,12450");
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-xl hover:bg-gray-800 font-bold shadow-lg shadow-gray-200 transition-transform active:scale-95"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-primary text-white rounded-xl hover:bg-gray-800 dark:hover:bg-primary/90 font-bold shadow-lg shadow-gray-200 dark:shadow-none transition-transform active:scale-95 text-sm"
             >
-              <Download className="w-4 h-4" /> Export PDF
+              <Download className="w-4 h-4" /> {t("analytics.exportReport")}
             </button>
           </div>
         </div>
 
         {/* KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <KPICard title="Total Revenue" value="$880.5K" trend="+12.5%" isPositive={true} subtitle="Compared to last year" />
+          <KPICard title={t("analytics.totalRevenue")} value="$880.5K" trend="+12.5%" isPositive={true} subtitle="Compared to last year" />
           <KPICard title="Total Expenses" value="$543.0K" trend="+4.2%" isPositive={false} subtitle="Compared to last year" />
           <KPICard title="Patient Volume" value="12,450" trend="+18.1%" isPositive={true} subtitle="New and returning patients" />
-          <KPICard title="Avg. Stay Duration" value="3.2 Days" trend="-0.5%" isPositive={true} subtitle="Efficiency improvement" />
+          <KPICard title={t("analytics.avgStay")} value="3.2 Days" trend="-0.5%" isPositive={true} subtitle="Clinical efficiency" />
         </div>
 
         {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
-            <h3 className="text-lg font-black text-gray-900 mb-6">Financial Overview</h3>
+          <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm transition-colors">
+            <h3 className="text-lg font-black text-gray-900 dark:text-white mb-6">{t("analytics.financialOverview")}</h3>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={revenueData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -109,10 +109,10 @@ const AnalyticsPage = () => {
                       <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(val) => `$${val/1000}k`} />
-                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', fontWeight: 'bold' }} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#64748b22" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} tickFormatter={(val) => `$${val/1000}k`} />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', backgroundColor: '#1e293b', color: '#fff', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)', fontWeight: 'bold' }} />
                   <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontWeight: 'bold' }} />
                   <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#10b981" strokeWidth={3} fill="url(#colorRev)" />
                   <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#ef4444" strokeWidth={3} fill="url(#colorExp)" />
@@ -121,15 +121,15 @@ const AnalyticsPage = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
-            <h3 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2"><PieChartIcon className="w-5 h-5 text-gray-400" /> Patient Demographics</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm transition-colors">
+            <h3 className="text-lg font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2"><PieChartIcon className="w-5 h-5 text-gray-400" /> {t("analytics.patientDemographics")}</h3>
             <div className="h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={patientDemographics} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                     {patientDemographics.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                   </Pie>
-                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} />
+                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', backgroundColor: '#1e293b', color: '#fff' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -138,8 +138,8 @@ const AnalyticsPage = () => {
                 <div key={i} className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }} />
                   <div>
-                    <p className="text-xs text-gray-500 font-bold">{d.name}</p>
-                    <p className="text-sm font-black text-gray-900">{d.value}%</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-bold">{d.name}</p>
+                    <p className="text-sm font-black text-gray-900 dark:text-white">{d.value}%</p>
                   </div>
                 </div>
               ))}
@@ -148,16 +148,16 @@ const AnalyticsPage = () => {
         </div>
 
         {/* Charts Row 2 */}
-        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
-          <h3 className="text-lg font-black text-gray-900 mb-6">Department Performance</h3>
+        <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm transition-colors">
+          <h3 className="text-lg font-black text-gray-900 dark:text-white mb-6">{t("analytics.departmentPerformance")}</h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={departmentPerformance} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
-                <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(val) => `$${val/1000}k`} />
-                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
-                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', fontWeight: 'bold' }} cursor={{fill: '#f8fafc'}} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#64748b22" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+                <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} tickFormatter={(val) => `$${val/1000}k`} />
+                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', backgroundColor: '#1e293b', color: '#fff', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)', fontWeight: 'bold' }} cursor={{fill: '#ffffff10'}} />
                 <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontWeight: 'bold' }} />
                 <Bar yAxisId="left" dataKey="revenue" name="Revenue ($)" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={30} />
                 <Bar yAxisId="right" dataKey="patients" name="Patients Treated" fill="#38bdf8" radius={[4, 4, 0, 0]} barSize={30} />

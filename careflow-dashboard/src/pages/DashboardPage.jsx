@@ -1,19 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useNotifications } from "@/context/NotificationContext";
 import { 
   Bed, Users, AlertTriangle, Activity, Heart, 
-  TrendingUp, TrendingDown, Calendar, Clock, 
-  Ambulance, Stethoscope, Pill, Syringe,
-  ArrowUpRight, ArrowDownRight, MoreVertical,
-  Download, RefreshCw, Filter, Check, Thermometer
+  TrendingUp, TrendingDown, Clock, 
+  Stethoscope, Download, RefreshCw
 } from "lucide-react";
 import { downloadFile } from "@/utils/downloadHelper";
 import { 
-  LineChart, Line, AreaChart, Area, 
-  BarChart, Bar, PieChart, Pie, Cell,
+  AreaChart, Area, 
   XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, Legend 
 } from "recharts";
@@ -37,9 +34,9 @@ const departmentOccupancy = [
 ];
 
 const staffOnDuty = [
-  { name: "Doctors", count: 24, icon: Stethoscope, color: "text-blue-500", bg: "bg-blue-100" },
-  { name: "Nurses", count: 68, icon: Activity, color: "text-emerald-500", bg: "bg-emerald-100" },
-  { name: "Support", count: 32, icon: Users, color: "text-amber-500", bg: "bg-amber-100" },
+  { name: "Doctors", count: 24, icon: Stethoscope, color: "text-blue-500", bg: "bg-blue-100 dark:bg-blue-950/60" },
+  { name: "Nurses", count: 68, icon: Activity, color: "text-emerald-500", bg: "bg-emerald-100 dark:bg-emerald-950/60" },
+  { name: "Support", count: 32, icon: Users, color: "text-amber-500", bg: "bg-amber-100 dark:bg-amber-950/60" },
 ];
 
 const upcomingSurgeries = [
@@ -78,22 +75,23 @@ const DashboardPage = () => {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 700));
     setIsRefreshing(false);
+    push("system", t("dashboard.refreshed"), t("dashboard.refreshedMsg"));
   };
 
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-7xl mx-auto pb-10">
         {/* Header section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm transition-colors">
           <div className="flex items-center gap-4">
             <div className="p-4 bg-primary/10 text-primary rounded-2xl">
               <Heart className="w-8 h-8" />
             </div>
             <div>
-              <h1 className="text-3xl font-black text-gray-900 tracking-tight">{t("dashboard.title")}</h1>
-              <p className="text-gray-500 font-medium mt-1">{t("dashboard.subtitle")}</p>
+              <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{t("dashboard.title")}</h1>
+              <p className="text-gray-500 dark:text-gray-400 font-medium mt-1">{t("dashboard.subtitle")}</p>
             </div>
           </div>
           <div className="flex gap-3">
@@ -102,12 +100,12 @@ const DashboardPage = () => {
                 push("system", "Report Exported", "The dashboard report has been downloaded.");
                 downloadFile("dashboard_report.csv", "Metric,Value\nTotal Patients,1284\nAvailable Beds,142\nCritical Cases,28\nActive Staff,124");
               }}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gray-50 text-gray-700 rounded-xl hover:bg-gray-100 font-semibold border border-gray-200 transition-colors"
+              className="flex items-center gap-2 px-5 py-2.5 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 font-semibold border border-gray-200 dark:border-gray-700 transition-colors text-sm"
             >
-              <Download className="w-4 h-4" /> Export Report
+              <Download className="w-4 h-4" /> {t("dashboard.exportData")}
             </button>
-            <button onClick={handleRefresh} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 font-semibold shadow-lg shadow-primary/30 transition-all active:scale-95">
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} /> Refresh
+            <button onClick={handleRefresh} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 font-semibold shadow-lg shadow-primary/30 transition-all active:scale-95 text-sm">
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} /> {t("common.refresh")}
             </button>
           </div>
         </div>
@@ -134,13 +132,13 @@ const DashboardPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Chart */}
-          <div className="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+          <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm p-6 transition-colors">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h3 className="text-xl font-bold text-gray-900">{t("dashboard.patientFlow")}</h3>
-                <p className="text-sm text-gray-500 mt-1">Admissions vs Discharges over 6 months</p>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t("dashboard.patientFlow")}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Admissions vs Discharges over 6 months</p>
               </div>
-              <select className="bg-gray-50 border border-gray-200 text-sm rounded-lg px-3 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-primary/20">
+              <select className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 text-sm rounded-lg px-3 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-primary/20">
                 <option>Last 6 Months</option>
                 <option>This Year</option>
               </select>
@@ -158,12 +156,12 @@ const DashboardPage = () => {
                       <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#64748b22" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
                   <Tooltip 
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)', fontWeight: 'bold' }}
-                    itemStyle={{ fontSize: '14px' }}
+                    contentStyle={{ borderRadius: '16px', border: 'none', backgroundColor: '#1e293b', color: '#fff', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)', fontWeight: 'bold' }}
+                    itemStyle={{ fontSize: '14px', color: '#fff' }}
                   />
                   <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '14px', fontWeight: 'bold' }} />
                   <Area type="monotone" dataKey="admissions" name="Admissions" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorAdmissions)" />
@@ -174,21 +172,21 @@ const DashboardPage = () => {
           </div>
 
           {/* Department Occupancy */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">{t("dashboard.departmentOccupancy")}</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm p-6 transition-colors">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{t("dashboard.departmentOccupancy")}</h3>
             <div className="space-y-5">
               {departmentOccupancy.map((dept) => {
                 const percentage = Math.round((dept.occupied / dept.beds) * 100);
                 return (
                   <div key={dept.name}>
                     <div className="flex justify-between items-end mb-2">
-                      <span className="font-bold text-gray-700 text-sm">{dept.name}</span>
+                      <span className="font-bold text-gray-700 dark:text-gray-300 text-sm">{dept.name}</span>
                       <div className="text-right">
                         <span className="text-sm font-black" style={{ color: dept.color }}>{percentage}%</span>
-                        <span className="text-xs text-gray-500 ml-1">({dept.occupied}/{dept.beds})</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">({dept.occupied}/{dept.beds})</span>
                       </div>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                    <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2.5 overflow-hidden">
                       <div 
                         className="h-2.5 rounded-full transition-all duration-1000 ease-out" 
                         style={{ width: `${percentage}%`, backgroundColor: dept.color }}
@@ -204,9 +202,9 @@ const DashboardPage = () => {
         {/* Bottom Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Upcoming Surgeries */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm p-6 transition-colors">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">{t("dashboard.upcomingSurgeries")}</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t("dashboard.upcomingSurgeries")}</h3>
               <button 
                 onClick={() => push("system", "Schedule Module", "Opening full surgery schedule view...")}
                 className="text-sm font-bold text-primary hover:text-primary/80 transition-colors"
@@ -216,22 +214,22 @@ const DashboardPage = () => {
             </div>
             <div className="space-y-4">
               {upcomingSurgeries.map((surgery, i) => (
-                <div key={i} className="flex gap-4 p-4 rounded-2xl border border-gray-100 hover:border-primary/30 hover:shadow-md transition-all group">
-                  <div className="w-16 flex flex-col items-center justify-center border-r border-gray-100 pr-4">
-                    <span className="text-xs text-gray-500 font-bold uppercase">Time</span>
-                    <span className="text-lg font-black text-gray-900 group-hover:text-primary transition-colors">{surgery.time}</span>
+                <div key={i} className="flex gap-4 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-primary/30 dark:hover:border-primary/40 hover:shadow-md transition-all group">
+                  <div className="w-16 flex flex-col items-center justify-center border-r border-gray-100 dark:border-gray-800 pr-4">
+                    <span className="text-xs text-gray-400 font-bold uppercase">Time</span>
+                    <span className="text-lg font-black text-gray-900 dark:text-white group-hover:text-primary transition-colors">{surgery.time}</span>
                   </div>
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
-                      <h4 className="font-bold text-gray-900 text-lg">{surgery.procedure}</h4>
+                      <h4 className="font-bold text-gray-900 dark:text-white text-lg">{surgery.procedure}</h4>
                       <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg
-                        ${surgery.status === 'Ongoing' ? 'bg-rose-100 text-rose-600 animate-pulse' : 
-                          surgery.status === 'Next' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}`}>
+                        ${surgery.status === 'Ongoing' ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 animate-pulse' : 
+                          surgery.status === 'Next' ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400' : 'bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400'}`}>
                         {surgery.status}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1 font-medium">Patient: <span className="text-gray-900">{surgery.patient}</span> • {surgery.room}</p>
-                    <p className="text-xs text-gray-400 mt-2 flex items-center gap-1.5">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">Patient: <span className="text-gray-900 dark:text-white font-semibold">{surgery.patient}</span> • {surgery.room}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 flex items-center gap-1.5">
                       <Stethoscope className="w-3.5 h-3.5" /> {surgery.surgeon}
                     </p>
                   </div>
@@ -241,21 +239,21 @@ const DashboardPage = () => {
           </div>
 
           {/* Active Staff */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">{t("dashboard.staffOnDuty")}</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm p-6 transition-colors">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{t("dashboard.staffOnDuty")}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {staffOnDuty.map((staff, i) => (
-                <div key={i} className="p-5 rounded-2xl border border-gray-100 text-center hover:shadow-md transition-all">
+                <div key={i} className="p-5 rounded-2xl border border-gray-100 dark:border-gray-800 text-center hover:shadow-md transition-all">
                   <div className={`w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-3 ${staff.bg} ${staff.color}`}>
                     <staff.icon className="w-6 h-6" />
                   </div>
-                  <h4 className="text-3xl font-black text-gray-900">{staff.count}</h4>
-                  <p className="text-sm font-semibold text-gray-500 mt-1">{staff.name}</p>
+                  <h4 className="text-3xl font-black text-gray-900 dark:text-white">{staff.count}</h4>
+                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-1">{staff.name}</p>
                 </div>
               ))}
             </div>
 
-            <div className="mt-6 p-5 rounded-2xl bg-gradient-to-r from-gray-900 to-gray-800 text-white flex items-center justify-between">
+            <div className="mt-6 p-5 rounded-2xl bg-gradient-to-r from-gray-900 to-gray-800 dark:from-gray-800 dark:to-gray-750 text-white flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400 font-medium mb-1">Current Shift</p>
                 <h4 className="text-xl font-bold flex items-center gap-2">

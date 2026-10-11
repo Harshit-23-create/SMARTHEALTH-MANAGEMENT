@@ -4,9 +4,10 @@ import {
   LayoutDashboard, Bed, Users, AlertTriangle, BarChart3,
   CalendarCheck, Droplets, Pill, Truck, Settings, MapPin,
   Bell, Search, Menu, Heart, ChevronDown, LogOut, X,
-  CheckCheck, Trash2, Globe
+  CheckCheck, Trash2, Globe, Sun, Moon
 } from "lucide-react";
 import { useNotifications } from "@/context/NotificationContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useTranslation } from "react-i18next";
 
 const navItems = [
@@ -42,6 +43,7 @@ const DashboardLayout = ({ children }) => {
 
   const { notifications, unreadCount, markRead, markAllRead, clearAll, TYPE_META } = useNotifications();
   const { t, i18n } = useTranslation();
+  const { isDark, toggleTheme } = useTheme();
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -152,20 +154,54 @@ const DashboardLayout = ({ children }) => {
           </div>
 
           {/* Right */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* ── Theme Toggle Button ───────────────────── */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-secondary dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-200 border border-transparent hover:border-border"
+              title={isDark ? "Switch to Light mode" : "Switch to Dark mode"}
+              aria-label="Toggle theme"
+            >
+              {isDark ? (
+                <Sun className="w-5 h-5 text-amber-400 animate-fade-in" />
+              ) : (
+                <Moon className="w-5 h-5 text-slate-700 animate-fade-in" />
+              )}
+            </button>
+
             {/* ── Language Switcher ───────────────────────── */}
             <div className="relative" ref={langRef}>
               <button
                 onClick={() => setLangOpen((o) => !o)}
-                className="p-2 rounded-lg hover:bg-secondary transition-colors flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-200"
+                className="p-2 rounded-lg hover:bg-secondary dark:hover:bg-gray-800 transition-colors flex items-center gap-1.5 text-xs font-bold text-gray-700 dark:text-gray-200 border border-transparent hover:border-border"
               >
-                <Globe className="w-4 h-4" />
-                {i18n.language.toUpperCase()}
+                <Globe className="w-4 h-4 text-primary" />
+                <span>{i18n.language.toUpperCase()}</span>
+                <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${langOpen ? 'rotate-180' : ''}`} />
               </button>
               {langOpen && (
-                <div className="absolute right-0 top-12 w-32 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-[9999] overflow-hidden py-1">
-                  <button onClick={() => { i18n.changeLanguage('en'); setLangOpen(false); }} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${i18n.language === 'en' ? 'text-primary font-bold bg-primary/5' : 'text-gray-700'}`}>English</button>
-                  <button onClick={() => { i18n.changeLanguage('hi'); setLangOpen(false); }} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${i18n.language === 'hi' ? 'text-primary font-bold bg-primary/5' : 'text-gray-700'}`}>हिंदी (Hindi)</button>
+                <div className="absolute right-0 top-12 w-40 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-[9999] overflow-hidden py-1">
+                  <button
+                    onClick={() => { i18n.changeLanguage('en'); setLangOpen(false); }}
+                    className={`w-full text-left px-3.5 py-2.5 text-xs transition flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${i18n.language === 'en' ? 'text-primary font-bold bg-primary/10' : 'text-gray-700 dark:text-gray-300'}`}
+                  >
+                    <span>🇺🇸</span>
+                    <span>English</span>
+                  </button>
+                  <button
+                    onClick={() => { i18n.changeLanguage('hi'); setLangOpen(false); }}
+                    className={`w-full text-left px-3.5 py-2.5 text-xs transition flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${i18n.language === 'hi' ? 'text-primary font-bold bg-primary/10' : 'text-gray-700 dark:text-gray-300'}`}
+                  >
+                    <span>🇮🇳</span>
+                    <span>हिंदी (Hindi)</span>
+                  </button>
+                  <button
+                    onClick={() => { i18n.changeLanguage('es'); setLangOpen(false); }}
+                    className={`w-full text-left px-3.5 py-2.5 text-xs transition flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${i18n.language === 'es' ? 'text-primary font-bold bg-primary/10' : 'text-gray-700 dark:text-gray-300'}`}
+                  >
+                    <span>🇪🇸</span>
+                    <span>Español</span>
+                  </button>
                 </div>
               )}
             </div>
