@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>New Feature Implementation Guide — CareFlow HMS</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+  header{background:linear-gradient(135deg,#1e1b4b,#6366f1);padding:18px 32px;display:flex;align-items:center;gap:12px}
+  header h1{font-size:1.3rem;font-weight:800;color:#fff}
+  .tabs{display:flex;gap:2px;padding:0 32px;background:#1e293b;border-bottom:1px solid #334155}
+  .tab{padding:12px 20px;font-size:.8rem;font-weight:600;color:#64748b;cursor:pointer;border-bottom:2px solid transparent}
+  .tab.active{color:#818cf8;border-bottom-color:#818cf8}
+  .panel{display:none;padding:28px;overflow:auto}
+  .panel.active{display:block}
+  .step-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:20px}
+  .step-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;cursor:pointer;transition:all .2s}
+  .step-card:hover{border-color:#6366f1;transform:translateY(-2px);box-shadow:0 8px 24px rgba(99,102,241,.2)}
+  .step-num{width:32px;height:32px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;color:#fff;margin-bottom:12px}
+  .step-title{font-size:.9rem;font-weight:700;color:#f1f5f9;margin-bottom:6px}
+  .step-desc{font-size:.78rem;color:#64748b;line-height:1.5}
+  .code-block{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:16px;font-family:'Cascadia Code','Fira Code',monospace;font-size:.78rem;color:#e2e8f0;overflow-x:auto;margin:12px 0;line-height:1.6}
+  .code-block .comment{color:#4b5563}
+  .code-block .kw{color:#818cf8}
+  .code-block .str{color:#34d399}
+  .code-block .fn{color:#fbbf24}
+  .file-chip{display:inline-block;padding:2px 8px;border-radius:4px;background:#1e293b;border:1px solid #334155;font-size:.72rem;color:#94a3b8;font-family:monospace;margin:2px}
+  .example-header{font-size:1.1rem;font-weight:800;color:#f1f5f9;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155}
+  .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.7rem;font-weight:600}
+  .badge-be{background:rgba(16,185,129,.15);color:#4ade80;border:1px solid rgba(16,185,129,.3)}
+  .badge-fe{background:rgba(99,102,241,.15);color:#a5b4fc;border:1px solid rgba(99,102,241,.3)}
+  .badge-db{background:rgba(168,85,247,.15);color:#d8b4fe;border:1px solid rgba(168,85,247,.3)}
+  .badge-new{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
+  h3{font-size:.9rem;font-weight:700;color:#94a3b8;margin:16px 0 8px;text-transform:uppercase;letter-spacing:.05em}
+  p{font-size:.82rem;color:#94a3b8;line-height:1.6;margin-bottom:10px}
+  ul{font-size:.82rem;color:#94a3b8;padding-left:18px;line-height:1.8}
+</style>
+</head>
+<body>
+<header>
+  <svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="rgba(255,255,255,.2)"/><path d="M8 14h12M14 8v12" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>
+  <div>
+    <h1>New Feature Implementation Guide</h1>
+    <div style="font-size:.78rem;color:#c7d2fe;margin-top:2px">Interview Prep: How to safely add a feature to CareFlow HMS</div>
+  </div>
+</header>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('workflow')">General Workflow</div>
+  <div class="tab" onclick="switchTab('search')">Example 1: Patient Search</div>
+  <div class="tab" onclick="switchTab('status')">Example 2: Status Update</div>
+  <div class="tab" onclick="switchTab('notif')">Example 3: Notifications</div>
+</div>
+
+<!-- WORKFLOW PANEL -->
+<div id="panel-workflow" class="panel active">
+  <div class="example-header">🛠️ Standard Feature Implementation Workflow (16 Steps)</div>
+  <p>Use this checklist whenever an interviewer asks you to add a feature to the project. Follow these steps in order.</p>
+  
+  <div class="step-grid">
+    <div class="step-card" onclick="expandStep(1)">
+      <div class="step-num">1</div>
+      <div class="step-title">Understand the Requirement</div>
+      <div class="step-desc">Ask: What does the user do? What does the system return? Any role restrictions? Edge cases?</div>
+    </div>
+    <div class="step-card" onclick="expandStep(2)">
+      <div class="step-num">2</div>
+      <div class="step-title">Define Acceptance Criteria</div>
+      <div class="step-desc">Write 3-5 clear "given/when/then" statements. Example: "Given I'm logged in as Doctor, when I search for patient name, then I see matching records."</div>
+    </div>
+    <div class="step-card" onclick="expandStep(3)">
+      <div class="step-num">3</div>
+      <div class="step-title">Find Related Code</div>
+      <div class="step-desc">Check App.jsx for routing. Check server.js for existing patterns. Check models/ for schemas. Never assume — read the code.</div>
+    </div>
+    <div class="step-card" onclick="expandStep(4)">
+      <div class="step-num">4</div>
+      <div class="step-title">Design the API Contract</div>
+      <div class="step-desc">Method (GET/POST/PUT/DELETE), endpoint path, request body shape, response shape, auth required, error codes.</div>
+    </div>
+    <div class="step-card" onclick="expandStep(5)">
+      <div class="step-num">5</div>
+      <div class="step-title">Update Schema if Needed</div>
+      <div class="step-desc">Add new fields to existing Mongoose model or create a new model in backend/models/. Always use timestamps: true.</div>
+    </div>
+    <div class="step-card" onclick="expandStep(6)">
+      <div class="step-num">6</div>
+      <div class="step-title">Implement Backend Route</div>
+      <div class="step-desc">Add route to server.js following existing pattern: app.METHOD('/path', async(req,res)=>{try{...}catch(err){...}})</div>
+    </div>
+    <div class="step-card" onclick="expandStep(7)">
+      <div class="step-num">7</div>
+      <div class="step-title">Add Auth Middleware</div>
+      <div class="step-desc">Import authmiddleware.js and add as second argument to protected routes: app.post('/route', authMiddleware, async(req,res)=>{...})</div>
+    </div>
+    <div class="step-card" onclick="expandStep(8)">
+      <div class="step-num">8</div>
+      <div class="step-title">Add Frontend API Call</div>
+      <div class="step-desc">In the relevant page, import API_BASE_URL from '@/utils/api'. Use fetch() with proper headers including Authorization: Bearer ${token}.</div>
+    </div>
+    <div class="step-card" onclick="expandStep(9)">
+      <div class="step-num">9</div>
+      <div class="step-title">Add UI Component</div>
+      <div class="step-desc">Add the form/display inside DashboardLayout. Use existing Tailwind classes for consistency. Follow the card pattern from other pages.</div>
+    </div>
+    <div class="step-card" onclick="expandStep(10)">
+      <div class="step-num">10</div>
+      <div class="step-title">Handle Loading & Errors</div>
+      <div class="step-desc">Add useState for loading, error states. Show spinner during fetch. Show error message on failure. Handle empty states.</div>
+    </div>
+    <div class="step-card" onclick="expandStep(11)">
+      <div class="step-num">11</div>
+      <div class="step-title">Add Route to App.jsx</div>
+      <div class="step-desc">If new page: import component, add &lt;Route path="/new-path" element={&lt;ProtectedRoute&gt;&lt;NewPage/&gt;&lt;/ProtectedRoute&gt;}/&gt;</div>
+    </div>
+    <div class="step-card" onclick="expandStep(12)">
+      <div class="step-num">12</div>
+      <div class="step-title">Add Nav Link</div>
+      <div class="step-desc">Add to navItems array in DashboardLayout.jsx: { key: "featureKey", path: "/path", icon: IconComponent }</div>
+    </div>
+    <div class="step-card" onclick="expandStep(13)">
+      <div class="step-num">13</div>
+      <div class="step-title">Add to i18n.js</div>
+      <div class="step-desc">Add translation keys for all new UI text in all 3 languages (en, hi, es) in src/i18n.js. Use useTranslation() hook in component.</div>
+    </div>
+    <div class="step-card" onclick="expandStep(14)">
+      <div class="step-num">14</div>
+      <div class="step-title">Test Manually</div>
+      <div class="step-desc">Start backend: cd backend && npm run dev. Start frontend: cd careflow-dashboard && npm run dev. Test each acceptance criteria. Check Network tab in DevTools.</div>
+    </div>
+    <div class="step-card" onclick="expandStep(15)">
+      <div class="step-num">15</div>
+      <div class="step-title">Check for Regressions</div>
+      <div class="step-desc">Verify existing features still work: login, patient list, ambulance map. Run npm run lint. Run npm run test (vitest).</div>
+    </div>
+    <div class="step-card" onclick="expandStep(16)">
+      <div class="step-num">16</div>
+      <div class="step-title">Explain to Interviewer</div>
+      <div class="step-desc">"I identified the files, defined the API contract, added the backend route with auth middleware, updated the schema, created the frontend component with proper error handling, tested, and verified no regressions."</div>
+    </div>
+  </div>
+</div>
+
+<!-- SEARCH EXAMPLE -->
+<div id="panel-search" class="panel">
+  <div class="example-header">🔍 Example 1: Server-Side Patient Search/Filtering</div>
+  <p><span class="badge badge-new">NEW FEATURE</span> Currently search/filter is client-side only. Add server-side search so large databases can be queried efficiently.</p>
+
+  <h3>Files to Modify</h3>
+  <span class="file-chip">backend/server.js</span>
+  <span class="file-chip">careflow-dashboard/src/pages/PatientManagementPage.jsx</span>
+
+  <h3>Step 1: Update Backend GET /patients Route</h3>
+  <div class="code-block"><span class="comment">// server.js — modify the existing GET /patients route</span>
+<span class="kw">app</span>.<span class="fn">get</span>(<span class="str">"/patients"</span>, <span class="kw">async</span> (req, res) => {
+  <span class="kw">try</span> {
+    <span class="comment">// Read query params: ?search=john&status=Admitted&page=1&limit=6</span>
+    <span class="kw">const</span> { search, status, page = 1, limit = 6 } = req.query;
+    
+    <span class="kw">const</span> query = {};
+    
+    <span class="comment">// Add search filter if provided</span>
+    <span class="kw">if</span> (search) {
+      query.$or = [
+        { name: { $regex: search, $options: <span class="str">"i"</span> } },
+        { disease: { $regex: search, $options: <span class="str">"i"</span> } }
+      ];
+    }
+    
+    <span class="comment">// Add status filter if provided (and valid)</span>
+    <span class="kw">if</span> (status && status !== <span class="str">"All"</span>) {
+      query.status = status;
+    }
+    
+    <span class="kw">const</span> total = <span class="kw">await</span> Patient.<span class="fn">countDocuments</span>(query);
+    <span class="kw">const</span> patients = <span class="kw">await</span> Patient
+      .<span class="fn">find</span>(query)
+      .<span class="fn">sort</span>({ createdAt: -1 })
+      .<span class="fn">skip</span>((page - 1) * limit)
+      .<span class="fn">limit</span>(Number(limit));
+    
+    res.<span class="fn">json</span>({ patients, total, page: Number(page), pages: Math.<span class="fn">ceil</span>(total / limit) });
+  } <span class="kw">catch</span> (error) {
+    res.<span class="fn">status</span>(500).<span class="fn">json</span>({ message: error.message });
+  }
+});</div>
+
+  <h3>Step 2: Update fetchPatients() in PatientManagementPage.jsx</h3>
+  <div class="code-block"><span class="comment">// PatientManagementPage.jsx — update fetchPatients</span>
+<span class="kw">const</span> <span class="fn">fetchPatients</span> = <span class="kw">async</span> (searchTerm = search, statusFilter = filter, pg = currentPage) => {
+  <span class="kw">try</span> {
+    setLoading(<span class="kw">true</span>);
+    
+    <span class="comment">// Build query string</span>
+    <span class="kw">const</span> params = <span class="kw">new</span> URLSearchParams({
+      page: pg,
+      limit: itemsPerPage,
+      ...(searchTerm && { search: searchTerm }),
+      ...(statusFilter !== <span class="str">"All"</span> && { status: statusFilter })
+    });
+    
+    <span class="kw">const</span> res = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">`${API_BASE_URL}/patients?${params}`</span>);
+    
+    <span class="kw">if</span> (res.ok) {
+      <span class="kw">const</span> data = <span class="kw">await</span> res.<span class="fn">json</span>();
+      setPatients(data.patients || data);  <span class="comment">// backwards compat</span>
+      setTotalPages(data.pages || 1);
+    } <span class="kw">else</span> {
+      setPatients(fallbackPatients);
+    }
+  } <span class="kw">catch</span> {
+    setPatients(fallbackPatients);
+  } <span class="kw">finally</span> {
+    setLoading(<span class="kw">false</span>);
+  }
+};</div>
+
+  <h3>Step 3: Debounce the Search Input</h3>
+  <div class="code-block"><span class="comment">// Add debounce to avoid API call on every keystroke</span>
+<span class="kw">const</span> debounceRef = useRef(<span class="kw">null</span>);
+
+<span class="kw">const</span> <span class="fn">handleSearchChange</span> = (e) => {
+  <span class="kw">const</span> val = e.target.value;
+  setSearch(val);
+  clearTimeout(debounceRef.current);
+  debounceRef.current = setTimeout(() => {
+    setCurrentPage(1);
+    <span class="fn">fetchPatients</span>(val, filter, 1);
+  }, 400);  <span class="comment">// wait 400ms after typing stops</span>
+};</div>
+
+  <h3>60-Second Interview Explanation</h3>
+  <div style="background:#1e293b;border-left:4px solid #6366f1;padding:16px;border-radius:0 8px 8px 0;font-size:.83rem;color:#94a3b8;line-height:1.7;margin-top:12px">
+    "Currently, search is done client-side — the frontend fetches ALL patients and filters in memory. This doesn't scale. My fix was to move search to the backend by adding query string support to the GET /patients route using MongoDB's <code>$regex</code> operator, combined with mongoose's skip/limit for server-side pagination. On the frontend, I updated fetchPatients() to build a query string and added a 400ms debounce to avoid hammering the API on every keystroke. This is a standard pattern in production APIs."
+  </div>
+</div>
+
+<!-- STATUS UPDATE EXAMPLE -->
+<div id="panel-status" class="panel">
+  <div class="example-header">🔄 Example 2: Fix Patient Status Update (Add Missing Statuses)</div>
+  <p><span class="badge badge-new">BUG FIX</span> Backend only accepts "Admitted" or "Discharged" but frontend shows "Critical" and "Recovering". Fix both sides.</p>
+
+  <h3>Files to Modify</h3>
+  <span class="file-chip">backend/models/Patient.js</span>
+  <span class="file-chip">backend/server.js</span>
+  <span class="file-chip">careflow-dashboard/src/pages/PatientManagementPage.jsx</span>
+
+  <h3>Step 1: Update Patient.js Schema</h3>
+  <div class="code-block"><span class="comment">// backend/models/Patient.js — expand status enum</span>
+<span class="kw">const</span> patientSchema = <span class="kw">new</span> mongoose.Schema({
+  name:    { type: String, required: <span class="kw">true</span> },
+  age:     { type: Number, required: <span class="kw">true</span>, min: 0, max: 150 },
+  disease: { type: String, required: <span class="kw">true</span> },
+  bed:     { type: String, required: <span class="kw">true</span> },
+  <span class="comment">// ADD these new fields:</span>
+  gender:        { type: String, enum: [<span class="str">"Male"</span>, <span class="str">"Female"</span>, <span class="str">"Other"</span>] },
+  department:    { type: String },
+  doctor:        { type: String },
+  contactNumber: { type: String },
+  status: {
+    type: String,
+    <span class="comment">// EXPANDED enum — now matches frontend options</span>
+    enum: [<span class="str">"Admitted"</span>, <span class="str">"Discharged"</span>, <span class="str">"Critical"</span>, <span class="str">"Recovering"</span>],
+    default: <span class="str">"Admitted"</span>
+  }
+}, { timestamps: <span class="kw">true</span> });</div>
+
+  <h3>Step 2: Update server.js Validation</h3>
+  <div class="code-block"><span class="comment">// server.js L212 — update validation</span>
+<span class="kw">const</span> VALID_STATUSES = [<span class="str">"Admitted"</span>, <span class="str">"Discharged"</span>, <span class="str">"Critical"</span>, <span class="str">"Recovering"</span>];
+
+<span class="kw">if</span> (!VALID_STATUSES.<span class="fn">includes</span>(status)) {
+  <span class="kw">return</span> res.<span class="fn">status</span>(400).<span class="fn">json</span>({ message: <span class="str">"Invalid status value"</span> });
+}
+
+<span class="comment">// Also update POST /patients to accept all fields:</span>
+<span class="kw">const</span> { name, age, disease, bed, gender, department, doctor, contactNumber, status: bodyStatus } = req.body;
+<span class="kw">const</span> newPatient = <span class="kw">new</span> Patient({
+  name, age: Number(age), disease, bed,
+  gender, department, doctor, contactNumber,
+  status: bodyStatus || <span class="str">"Admitted"</span>
+});</div>
+
+  <h3>Step 3: Add Update Status Button to UI</h3>
+  <div class="code-block"><span class="comment">// In PatientManagementPage.jsx — add handleStatusUpdate function</span>
+<span class="kw">const</span> <span class="fn">handleStatusUpdate</span> = <span class="kw">async</span> (id, newStatus) => {
+  <span class="kw">try</span> {
+    <span class="kw">const</span> token = localStorage.<span class="fn">getItem</span>(<span class="str">"token"</span>);
+    <span class="kw">const</span> res = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">`${API_BASE_URL}/patients/${id}`</span>, {
+      method: <span class="str">"PUT"</span>,
+      headers: {
+        <span class="str">"Content-Type"</span>: <span class="str">"application/json"</span>,
+        <span class="str">"Authorization"</span>: <span class="str">`Bearer ${token}`</span>
+      },
+      body: JSON.<span class="fn">stringify</span>({ status: newStatus })
+    });
+    <span class="kw">if</span> (res.ok) {
+      setPatients(prev => prev.<span class="fn">map</span>(p => p._id === id ? { ...p, status: newStatus } : p));
+      push(<span class="str">"patient"</span>, <span class="str">"Status Updated"</span>, <span class="str">`Patient status changed to ${newStatus}`</span>);
+    }
+  } <span class="kw">catch</span> (err) {
+    console.<span class="fn">error</span>(<span class="str">"Status update failed"</span>, err);
+  }
+};</div>
+</div>
+
+<!-- NOTIFICATIONS EXAMPLE -->
+<div id="panel-notif" class="panel">
+  <div class="example-header">🔔 Example 3: Persist Notifications to Backend</div>
+  <p><span class="badge badge-new">NEW FEATURE</span> Currently notifications are lost on page refresh (in-memory only). Add MongoDB persistence.</p>
+
+  <h3>Files to Create/Modify</h3>
+  <span class="file-chip">backend/models/Notification.js</span> <span class="badge badge-new">NEW</span><br/><br/>
+  <span class="file-chip">backend/server.js</span>
+  <span class="file-chip">careflow-dashboard/src/context/NotificationContext.jsx</span>
+
+  <h3>Step 1: Create Notification.js Model</h3>
+  <div class="code-block"><span class="comment">// backend/models/Notification.js — NEW FILE</span>
+<span class="kw">import</span> mongoose <span class="kw">from</span> <span class="str">"mongoose"</span>;
+
+<span class="kw">const</span> notificationSchema = <span class="kw">new</span> mongoose.Schema({
+  type:    { type: String, required: <span class="kw">true</span> },
+  title:   { type: String, required: <span class="kw">true</span> },
+  message: { type: String, required: <span class="kw">true</span> },
+  read:    { type: Boolean, default: <span class="kw">false</span> },
+  userId:  { type: mongoose.Schema.Types.ObjectId, ref: <span class="str">"User"</span> }
+}, { timestamps: <span class="kw">true</span> });
+
+<span class="kw">export default</span> mongoose.<span class="fn">model</span>(<span class="str">"Notification"</span>, notificationSchema);</div>
+
+  <h3>Step 2: Add Routes to server.js</h3>
+  <div class="code-block"><span class="comment">// server.js — add notification routes</span>
+<span class="kw">import</span> Notification <span class="kw">from</span> <span class="str">"./models/Notification.js"</span>;
+<span class="kw">import</span> authMiddleware <span class="kw">from</span> <span class="str">"./middleware/authmiddleware.js"</span>;
+
+<span class="comment">// GET notifications for logged-in user</span>
+app.<span class="fn">get</span>(<span class="str">"/notifications"</span>, authMiddleware, <span class="kw">async</span> (req, res) => {
+  <span class="kw">const</span> notifs = <span class="kw">await</span> Notification
+    .<span class="fn">find</span>({ userId: req.user.id })
+    .<span class="fn">sort</span>({ createdAt: -1 })
+    .<span class="fn">limit</span>(50);
+  res.<span class="fn">json</span>(notifs);
+});
+
+<span class="comment">// POST — create notification</span>
+app.<span class="fn">post</span>(<span class="str">"/notifications"</span>, authMiddleware, <span class="kw">async</span> (req, res) => {
+  <span class="kw">const</span> { type, title, message } = req.body;
+  <span class="kw">const</span> notif = <span class="kw">new</span> Notification({ type, title, message, userId: req.user.id });
+  <span class="kw">await</span> notif.<span class="fn">save</span>();
+  res.<span class="fn">status</span>(201).<span class="fn">json</span>(notif);
+});
+
+<span class="comment">// PUT — mark all read</span>
+app.<span class="fn">put</span>(<span class="str">"/notifications/read-all"</span>, authMiddleware, <span class="kw">async</span> (req, res) => {
+  <span class="kw">await</span> Notification.<span class="fn">updateMany</span>({ userId: req.user.id }, { read: <span class="kw">true</span> });
+  res.<span class="fn">json</span>({ message: <span class="str">"All marked read"</span> });
+});</div>
+
+  <h3>Step 3: Update NotificationContext to Persist</h3>
+  <div class="code-block"><span class="comment">// NotificationContext.jsx — add API sync</span>
+<span class="kw">const</span> <span class="fn">push</span> = useCallback(<span class="kw">async</span> (type, title, message) => {
+  <span class="comment">// Optimistic UI update (immediate)</span>
+  <span class="kw">const</span> localNotif = { id: Date.<span class="fn">now</span>(), type, title, message, time: <span class="kw">new</span> Date().<span class="fn">toISOString</span>(), read: <span class="kw">false</span> };
+  setNotifications(prev => [localNotif, ...prev]);
+  
+  <span class="comment">// Then persist to backend</span>
+  <span class="kw">try</span> {
+    <span class="kw">const</span> token = localStorage.<span class="fn">getItem</span>(<span class="str">"token"</span>);
+    <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">`${API_BASE_URL}/notifications`</span>, {
+      method: <span class="str">"POST"</span>,
+      headers: { <span class="str">"Content-Type"</span>: <span class="str">"application/json"</span>, Authorization: <span class="str">`Bearer ${token}`</span> },
+      body: JSON.<span class="fn">stringify</span>({ type, title, message })
+    });
+  } <span class="kw">catch</span> {
+    <span class="comment">// Silent fail — notification still shows locally</span>
+  }
+}, []);</div>
+
+  <h3>60-Second Interview Explanation</h3>
+  <div style="background:#1e293b;border-left:4px solid #6366f1;padding:16px;border-radius:0 8px 8px 0;font-size:.83rem;color:#94a3b8;line-height:1.7;margin-top:12px">
+    "The existing NotificationContext is in-memory — notifications disappear on refresh. To fix this, I created a Notification Mongoose model with type, title, message, read, and userId fields. I added three protected backend routes (GET, POST, PUT) using authMiddleware so only authenticated users access their own notifications. On the frontend, I used an optimistic update pattern: the UI updates instantly, then the backend call happens asynchronously. This way, even if the backend fails, the user still sees the notification immediately."
+  </div>
+</div>
+
+<script>
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+}
+function expandStep(n){
+  const steps={
+    1:"Ask clarifying questions: Who uses this feature? (role) What triggers it? (user action) What does it return? What are the edge cases? Does it touch the database?",
+    2:"Write testable criteria: 'Given I am on the Patient Management page, when I click Add Patient and fill the form, then the patient appears in the list within 2 seconds.'",
+    3:"Grep for related patterns: Does a similar route exist in server.js? Does a similar form exist in another page? Which model is closest? Always read before writing.",
+    4:"API Design: Method: POST, Path: /patients/:id/status, Body: {status: 'Critical'}, Response: 200 {updated patient}, Auth: Bearer JWT required, Errors: 400 invalid status, 404 not found, 401 unauthorized.",
+    5:"Mongoose schema changes are safe — Mongoose adds new fields without affecting existing documents. Old documents will have undefined for new optional fields. Add optional fields without required: true.",
+    6:"Pattern in server.js: app.METHOD('/path', async(req,res)=>{ try { const {field} = req.body; if(!field) return res.status(400).json({message:'required'}); const result = await Model.save(); res.status(201).json(result); } catch(err) { res.status(500).json({message:err.message}); } });",
+    7:"Import: import authMiddleware from './middleware/authmiddleware.js'; Apply: app.post('/route', authMiddleware, async(req,res)=>{...}); Now req.user is available with {id, role}.",
+    8:"const token = localStorage.getItem('token'); const res = await fetch(`${API_BASE_URL}/endpoint`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(data) });",
+    9:"Follow the existing page structure: DashboardLayout wrapper, header with page title + action buttons, stats cards grid, main content grid, modal for forms. Copy class names from PatientManagementPage.jsx.",
+    10:"const [loading, setLoading] = useState(false); const [error, setError] = useState(''); In JSX: {loading && <Spinner/>} {error && <ErrorBanner msg={error}/>}",
+    11:"In App.jsx imports section, add import NewPage from './pages/NewPage'; In Routes section: <Route path='/new' element={<ProtectedRoute><NewPage/></ProtectedRoute>}/>",
+    12:"In DashboardLayout.jsx navItems array, add: { key: 'newFeature', path: '/new', icon: LucideIconName } The icon must be imported from lucide-react.",
+    13:"In i18n.js, inside the en.translation object add: newFeature: { title: 'New Feature', action: 'Do Action' }. Repeat for hi and es. Use t('newFeature.title') in component.",
+    14:"Terminal 1: cd backend && npm run dev (starts on :5000). Terminal 2: cd careflow-dashboard && npm run dev (starts on :5173). Check browser console, Network tab in DevTools, and server terminal for errors.",
+    15:"npm run lint (ESLint check). npm run test (vitest). Manually test: login, patient list, ambulance page. Verify your new feature works. Verify old features unchanged.",
+    16:"Structure your explanation: 1) Identified the files to change. 2) Defined the API contract. 3) Updated the schema if needed. 4) Added backend route with auth. 5) Added frontend with error handling. 6) Tested and verified. This shows systematic thinking."
+  };
+  alert(`Step ${n}: ${steps[n]}`);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CareFlow HMS — Interactive Learning System & Project Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-dark: #090d16;
+    --card-bg: rgba(22, 29, 47, 0.7);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --primary: #06b6d4;
+    --primary-glow: rgba(6, 182, 212, 0.25);
+    --accent-purple: #8b5cf6;
+    --accent-green: #10b981;
+    --accent-amber: #f59e0b;
+    --accent-rose: #f43f5e;
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: radial-gradient(circle at 15% 20%, #111a2e 0%, var(--bg-dark) 80%);
+    color: var(--text-main);
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+    padding: 2.5rem 1.5rem;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 3rem;
+    text-align: center;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(6, 182, 212, 0.12);
+    border: 1px solid rgba(6, 182, 212, 0.35);
+    color: var(--primary);
+    padding: 0.35rem 0.9rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #ffffff 40%, var(--primary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 1rem;
+  }
+
+  .subtitle {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    max-width: 780px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 3rem;
+  }
+
+  .stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(12px);
+    border-radius: 14px;
+    padding: 1.2rem;
+    text-align: center;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .stat-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(6, 182, 212, 0.3);
+  }
+  .stat-num {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--primary);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .stat-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  .section-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .section-title span {
+    font-size: 1.1rem;
+    color: var(--primary);
+  }
+
+  .grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, var(--card-accent, var(--primary)), transparent);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 12px 28px -10px rgba(0, 0, 0, 0.6);
+  }
+  .card:hover::before {
+    opacity: 1;
+  }
+
+  .card-top {
+    margin-bottom: 1.25rem;
+  }
+  .card-tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    margin-bottom: 0.75rem;
+  }
+  .tag-arch { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.3); }
+  .tag-flow { background: rgba(6, 182, 212, 0.15); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.3); }
+  .tag-guide { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+  .tag-prep { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+  .card-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-desc {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .card-action {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  .alert-box {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 3rem;
+  }
+  .alert-title {
+    color: var(--accent-amber);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .alert-desc {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    line-height: 1.5;
+  }
+
+  footer {
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="badge">CareFlow HMS • Project Learning Hub</div>
+    <h1>Interactive Architecture & Interview Mastery Portal</h1>
+    <p class="subtitle">
+      A 100% source-code verified learning suite for the Smart Healthcare Management System (CareFlow Dashboard). Fully integrated with Archify interactive visual diagrams, complete file-by-file guides, simulation walkthroughs, and technical interview preparation.
+    </p>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-num">5</div>
+      <div class="stat-label">Interactive HTML Diagrams</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">8</div>
+      <div class="stat-label">Verified API Endpoints</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">50</div>
+      <div class="stat-label">Interview Q&As (Code-Backed)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">100%</div>
+      <div class="stat-label">Real Code Analysis (No Hallucinations)</div>
+    </div>
+  </div>
+
+  <div class="alert-box">
+    <div class="alert-title">⚡ Critical Interview Architecture Finding</div>
+    <div class="alert-desc">
+      CareFlow has <strong>two distinct simulation regimes</strong> you must explain to an interviewer: 
+      1) <em>Backend-backed Patient Management</em> (React &rarr; Express port 5000 &rarr; MongoDB `careflow` db with 8 REST endpoints), and 
+      2) <em>Frontend-only Mock Simulations</em> (Ambulance GPS movement, Live Alerts, Doctor Consultation queues, Billing, and Bed occupancy run on client-side React intervals without database persistence).
+    </div>
+  </div>
+
+  <div class="section-title">
+    <span>🧭</span> Interactive Visual Diagrams (Archify Powered)
+  </div>
+
+  <div class="grid-cards">
+    <!-- Architecture Diagram -->
+    <a href="architecture.html" class="card" style="--card-accent: #8b5cf6;">
+      <div class="card-top">
+        <span class="card-tag tag-arch">Full Stack System</span>
+        <div class="card-title">
+          Complete System Architecture
+          <span>↗</span>
+        </div>
+        <p class="card-desc">
+          Interactive node map showing the React frontend, Express REST API, MongoDB collections, mock timers, and authentication boundaries. Includes node search, focus tracing, and layer inspection.
+        </p>
+      </div>
+      <div class="card-meta">
+        <span>architecture.html</span>
+        <span class="card-action">Explore Diagram &rarr;</span>
+      </div>
+    </a>
+
+    <!-- Login Authentication Flow -->
+    <a href="login-authentication-flow.html" class="card" style="--card-accent: #06b6d4;">
+      <div class="card-top">
+        <span class="card-tag tag-flow">Auth Sequence</span>
+        <div class="card-title">
+          Authentication & Role Route Flow
+          <span>↗</span>
+        </div>
+        <p class="card-desc">
+          Interactive step-by-step trace of registration, bcrypt hashing, JWT issuance, localStorage token storage, and the React role-based routing guard.
+        </p>
+      </div>
+      <div class="card-meta">
+        <span>login-authentication-flow.html</span>
+        <span class="card-action">Explore Flow &rarr;</span>
+      </div>
+    </a>
+
+    <!-- Patient Management Flow -->
+    <a href="patient-management-flow.html" class="card" style="--card-accent: #10b981;">
+      <div class="card-top">
+        <span class="card-tag tag-flow">Full CRUD Life Cycle</span>
+        <div class="card-title">
+          Patient CRUD & Database Flow
+          <span>↗</span>
+        </div>
+        <p class="card-desc">
+          Live lifecycle trace: React form submit &rarr; Axios POST &rarr; Express route &rarr; Mongoose schema validation &rarr; MongoDB document insert &rarr; UI re-render.
+        </p>
+      </div>
+      <div class="card-meta">
+        <span>patient-management-flow.html</span>
+        <span class="card-action">Explore Flow &rarr;</span>
+      </div>
+    </a>
+
+    <!-- Ambulance Tracking Flow -->
+    <a href="ambulance-tracking-flow.html" class="card" style="--card-accent: #f59e0b;">
+      <div class="card-top">
+        <span class="card-tag tag-arch">Simulation Analysis</span>
+        <div class="card-title">
+          Ambulance GPS & Tracking Simulation
+          <span>↗</span>
+        </div>
+        <p class="card-desc">
+          Architecture breakdown showing the disconnected layers between the LiveMap Leaflet canvas movement (sine wave lat/lng updates) and AmbulancePage fleet management.
+        </p>
+      </div>
+      <div class="card-meta">
+        <span>ambulance-tracking-flow.html</span>
+        <span class="card-action">Explore Diagram &rarr;</span>
+      </div>
+    </a>
+
+    <!-- Feature Implementation Guide -->
+    <a href="feature-implementation-workflow.html" class="card" style="--card-accent: #f43f5e;">
+      <div class="card-top">
+        <span class="card-tag tag-guide">Coding Workflow</span>
+        <div class="card-title">
+          New Feature Implementation Engine
+          <span>↗</span>
+        </div>
+        <p class="card-desc">
+          Step-by-step 16-step checklist + 3 full worked examples (Doctor Shift Scheduling, Lab Test Results, Prescription Download) with exact backend schema, route, and frontend React code.
+        </p>
+      </div>
+      <div class="card-meta">
+        <span>feature-implementation-workflow.html</span>
+        <span class="card-action">View Guide &rarr;</span>
+      </div>
+    </a>
+  </div>
+
+  <div class="section-title">
+    <span>📚</span> Technical Documentation & Interview Mentorship
+  </div>
+
+  <div class="grid-cards">
+    <!-- Master Handbook -->
+    <a href="Smart_Healthcare_Complete_Project_Guide.md" class="card" style="--card-accent: #06b6d4;">
+      <div class="card-top">
+        <span class="card-tag tag-guide">Master Guide</span>
+        <div class="card-title">
+          Complete Project Handbook (42 KB)
+          <span>↗</span>
+        </div>
+        <p class="card-desc">
+          The comprehensive 8,000+ word master guide. Contains project synopsis, architecture patterns, file-by-file explanations, security bugs to mention, setup instructions, and bilingual interview talking points.
+        </p>
+      </div>
+      <div class="card-meta">
+        <span>Smart_Healthcare_Complete_Project_Guide.md</span>
+        <span class="card-action">Read Handbook &rarr;</span>
+      </div>
+    </a>
+
+    <!-- 50 Interview Questions -->
+    <a href="interview-questions.md" class="card" style="--card-accent: #f59e0b;">
+      <div class="card-top">
+        <span class="card-tag tag-prep">Interview Ready</span>
+        <div class="card-title">
+          50 Interview Questions & Verified Answers
+          <span>↗</span>
+        </div>
+        <p class="card-desc">
+          50 interview questions categorized into Architecture, Frontend/React, Backend/Express, Database/MongoDB, Real-Time/Simulation, Security, and Code Modifications. Includes 30-second elevator pitch and Hindi/English explanations.
+        </p>
+      </div>
+      <div class="card-meta">
+        <span>interview-questions.md</span>
+        <span class="card-action">Practice Q&A &rarr;</span>
+      </div>
+    </a>
+
+    <!-- API Reference -->
+    <a href="api-reference.md" class="card" style="--card-accent: #10b981;">
+      <div class="card-top">
+        <span class="card-tag tag-guide">API Specification</span>
+        <div class="card-title">
+          REST API Reference & Security Audit
+          <span>↗</span>
+        </div>
+        <p class="card-desc">
+          All 8 endpoints verified directly from <code>backend/server.js</code>. Detailed request payloads, response bodies, status codes, and security notes explaining unauthenticated route vulnerability.
+        </p>
+      </div>
+      <div class="card-meta">
+        <span>api-reference.md</span>
+        <span class="card-action">View Reference &rarr;</span>
+      </div>
+    </a>
+
+    <!-- Source File Map -->
+    <a href="source-file-map.md" class="card" style="--card-accent: #8b5cf6;">
+      <div class="card-top">
+        <span class="card-tag tag-guide">Code Directory</span>
+        <div class="card-title">
+          Source File Map & Interconnection Index
+          <span>↗</span>
+        </div>
+        <p class="card-desc">
+          Directory tree listing every single file in the project, its single responsibility, imports/dependencies, and exact connections across client and server.
+        </p>
+      </div>
+      <div class="card-meta">
+        <span>source-file-map.md</span>
+        <span class="card-action">Browse Map &rarr;</span>
+      </div>
+    </a>
+  </div>
+
+  <footer>
+    CareFlow HMS Learning System • Generated for Technical Interview Success • Archify Verified
+  </footer>
+</div>
+
+</body>
+</html>

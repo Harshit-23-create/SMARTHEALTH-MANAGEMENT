@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CareFlow Dashboard — Overall Architecture</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;overflow-x:hidden}
+  header{background:linear-gradient(135deg,#1e3a8a,#312e81);padding:20px 32px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 24px rgba(0,0,0,0.4)}
+  header h1{font-size:1.4rem;font-weight:800;color:#fff}
+  header span{font-size:.75rem;color:#93c5fd;background:rgba(59,130,246,.2);padding:3px 10px;border-radius:20px;border:1px solid rgba(59,130,246,.4)}
+  .subtitle{font-size:.85rem;color:#94a3b8;margin-top:2px}
+  .toolbar{display:flex;gap:8px;padding:12px 32px;background:#1e293b;border-bottom:1px solid #334155;flex-wrap:wrap}
+  .btn{padding:6px 14px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#94a3b8;font-size:.75rem;cursor:pointer;transition:all .2s}
+  .btn:hover,.btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
+  .legend{display:flex;gap:16px;align-items:center;margin-left:auto;flex-wrap:wrap}
+  .legend-item{display:flex;align-items:center;gap:6px;font-size:.72rem;color:#94a3b8}
+  .legend-dot{width:12px;height:12px;border-radius:3px}
+  .canvas-wrap{padding:32px;overflow:auto}
+  svg text{user-select:none}
+  .info-panel{position:fixed;right:0;top:0;bottom:0;width:320px;background:#1e293b;border-left:1px solid #334155;padding:24px;transform:translateX(100%);transition:transform .3s;overflow-y:auto;z-index:100}
+  .info-panel.open{transform:translateX(0)}
+  .info-panel h2{font-size:1rem;font-weight:700;color:#f1f5f9;margin-bottom:8px}
+  .info-panel p{font-size:.82rem;color:#94a3b8;line-height:1.6;margin-bottom:12px}
+  .info-panel code{background:#0f172a;padding:2px 6px;border-radius:4px;font-size:.78rem;color:#7dd3fc}
+  .info-panel .tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.7rem;font-weight:600;margin:2px;background:#334155;color:#94a3b8}
+  .info-panel .tag.backend{background:rgba(34,197,94,.15);color:#4ade80}
+  .info-panel .tag.frontend{background:rgba(59,130,246,.15);color:#60a5fa}
+  .info-panel .tag.db{background:rgba(168,85,247,.15);color:#c084fc}
+  .close-btn{float:right;cursor:pointer;font-size:1.2rem;color:#94a3b8;background:none;border:none}
+  .node-clickable{cursor:pointer}
+  .node-clickable:hover rect,.node-clickable:hover circle,.node-clickable:hover ellipse{filter:brightness(1.3)}
+  .flow-arrow{marker-end:url(#arrow)}
+  @keyframes dash{to{stroke-dashoffset:-20}}
+  .animated-line{animation:dash 1.5s linear infinite}
+</style>
+</head>
+<body>
+<header>
+  <svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#3b82f6"/><path d="M14 8h4v6h6v4h-6v6h-4v-6H8v-4h6z" fill="white"/></svg>
+  <div>
+    <h1>CareFlow Dashboard — Overall System Architecture</h1>
+    <div class="subtitle">MediCare Pro HMS · Verified from source code · Node v24 · React 18 · Express 5 · MongoDB</div>
+  </div>
+  <span>LIVE MAP</span>
+</header>
+<div class="toolbar">
+  <button class="btn active" onclick="setView('all')">Full Architecture</button>
+  <button class="btn" onclick="setView('auth')">Auth Flow</button>
+  <button class="btn" onclick="setView('data')">Data Flow</button>
+  <button class="btn" onclick="highlight('frontend')">Frontend</button>
+  <button class="btn" onclick="highlight('backend')">Backend</button>
+  <button class="btn" onclick="highlight('db')">Database</button>
+  <button class="btn" onclick="resetView()">Reset</button>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Frontend (React+Vite)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Backend (Node+Express)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>Database (MongoDB)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Context/State</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Security/Auth</div>
+  </div>
+</div>
+<div class="canvas-wrap">
+<svg id="diagram" viewBox="0 0 1200 780" width="100%" style="min-width:900px">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#3b82f6"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#10b981"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/>
+    </marker>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <linearGradient id="frontendGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e40af"/>
+      <stop offset="100%" style="stop-color:#3b82f6"/>
+    </linearGradient>
+    <linearGradient id="backendGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#065f46"/>
+      <stop offset="100%" style="stop-color:#10b981"/>
+    </linearGradient>
+    <linearGradient id="dbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4c1d95"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- =================== BROWSER LAYER =================== -->
+  <rect x="20" y="20" width="550" height="740" rx="16" fill="rgba(30,64,175,0.08)" stroke="#1e40af" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="40" y="50" fill="#93c5fd" font-size="11" font-weight="600" letter-spacing="1">BROWSER / CLIENT LAYER (React 18 + Vite + TailwindCSS)</text>
+
+  <!-- Entry Point -->
+  <g class="node-clickable" onclick="showInfo('main')">
+    <rect x="195" y="65" width="160" height="50" rx="10" fill="url(#frontendGrad)" filter="url(#glow)"/>
+    <text x="275" y="86" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">main.jsx</text>
+    <text x="275" y="102" text-anchor="middle" fill="#bfdbfe" font-size="9">React Entry Point</text>
+    <text x="275" y="112" text-anchor="middle" fill="#93c5fd" font-size="9">BrowserRouter · ThemeProvider · NotifProvider</text>
+  </g>
+
+  <!-- App.jsx -->
+  <g class="node-clickable" onclick="showInfo('app')">
+    <rect x="185" y="155" width="180" height="50" rx="10" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="275" y="176" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">App.jsx</text>
+    <text x="275" y="191" text-anchor="middle" fill="#bfdbfe" font-size="9">React Router v6 · Routes · ProtectedRoute wrapper</text>
+  </g>
+
+  <!-- Context Layer -->
+  <rect x="40" y="155" width="120" height="100" rx="10" fill="rgba(245,158,11,0.1)" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="100" y="175" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="600">CONTEXT</text>
+  <g class="node-clickable" onclick="showInfo('theme')">
+    <rect x="50" y="182" width="100" height="28" rx="6" fill="rgba(245,158,11,0.2)" stroke="#f59e0b" stroke-width="1"/>
+    <text x="100" y="197" text-anchor="middle" fill="#fbbf24" font-size="9" font-weight="600">ThemeContext</text>
+    <text x="100" y="207" text-anchor="middle" fill="#d97706" font-size="8">localStorage persist</text>
+  </g>
+  <g class="node-clickable" onclick="showInfo('notif')">
+    <rect x="50" y="218" width="100" height="28" rx="6" fill="rgba(245,158,11,0.2)" stroke="#f59e0b" stroke-width="1"/>
+    <text x="100" y="233" text-anchor="middle" fill="#fbbf24" font-size="9" font-weight="600">NotifContext</text>
+    <text x="100" y="243" text-anchor="middle" fill="#d97706" font-size="8">In-memory only</text>
+  </g>
+
+  <!-- Pages Section -->
+  <rect x="40" y="270" width="510" height="260" rx="10" fill="rgba(59,130,246,0.05)" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="60" y="290" fill="#60a5fa" font-size="10" font-weight="600">PAGES (src/pages/)</text>
+
+  <!-- Auth Pages -->
+  <g class="node-clickable" onclick="showInfo('login')">
+    <rect x="55" y="300" width="115" height="44" rx="8" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="112" y="318" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">LoginPage.jsx</text>
+    <text x="112" y="331" text-anchor="middle" fill="#93c5fd" font-size="8">POST /login · Demo fallback</text>
+    <text x="112" y="342" text-anchor="middle" fill="#64748b" font-size="8">JWT → localStorage</text>
+  </g>
+  <g class="node-clickable" onclick="showInfo('register')">
+    <rect x="180" y="300" width="115" height="44" rx="8" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="237" y="318" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">RegisterPage.jsx</text>
+    <text x="237" y="331" text-anchor="middle" fill="#93c5fd" font-size="8">POST /register</text>
+    <text x="237" y="342" text-anchor="middle" fill="#64748b" font-size="8">4 roles available</text>
+  </g>
+
+  <!-- Backend Connected Pages -->
+  <g class="node-clickable" onclick="showInfo('patients')">
+    <rect x="55" y="358" width="115" height="44" rx="8" fill="#1e3a8a" stroke="#10b981" stroke-width="1.5"/>
+    <text x="112" y="376" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">PatientMgmt.jsx</text>
+    <text x="112" y="389" text-anchor="middle" fill="#6ee7b7" font-size="8">GET/POST/DELETE /patients</text>
+    <text x="112" y="400" text-anchor="middle" fill="#64748b" font-size="8">Fallback demo data</text>
+  </g>
+  <g class="node-clickable" onclick="showInfo('ambulance')">
+    <rect x="180" y="358" width="115" height="44" rx="8" fill="#1e3a8a" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="237" y="376" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">AmbulancePage.jsx</text>
+    <text x="237" y="389" text-anchor="middle" fill="#fcd34d" font-size="8">Frontend-only CRUD</text>
+    <text x="237" y="400" text-anchor="middle" fill="#64748b" font-size="8">LiveMap + polling</text>
+  </g>
+
+  <!-- Frontend-only Pages -->
+  <g class="node-clickable" onclick="showInfo('dashboard')">
+    <rect x="305" y="300" width="115" height="44" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="362" y="318" text-anchor="middle" fill="#cbd5e1" font-size="10" font-weight="700">DashboardPage.jsx</text>
+    <text x="362" y="331" text-anchor="middle" fill="#64748b" font-size="8">Recharts charts</text>
+    <text x="362" y="342" text-anchor="middle" fill="#64748b" font-size="8">100% mock data</text>
+  </g>
+  <g class="node-clickable" onclick="showInfo('analytics')">
+    <rect x="430" y="300" width="105" height="44" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="482" y="318" text-anchor="middle" fill="#cbd5e1" font-size="10" font-weight="700">AnalyticsPage.jsx</text>
+    <text x="482" y="331" text-anchor="middle" fill="#64748b" font-size="8">Recharts KPIs</text>
+    <text x="482" y="342" text-anchor="middle" fill="#64748b" font-size="8">100% mock data</text>
+  </g>
+  <g class="node-clickable" onclick="showInfo('other-pages')">
+    <rect x="305" y="358" width="230" height="44" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <text x="420" y="376" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">Other Pages (Frontend-only Mock)</text>
+    <text x="420" y="392" text-anchor="middle" fill="#64748b" font-size="8">BedMgmt · Emergency · HospitalFinder · Appointments · BloodBank · Pharmacy · Settings</text>
+  </g>
+
+  <!-- Components -->
+  <rect x="40" y="545" width="510" height="190" rx="10" fill="rgba(99,102,241,0.05)" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="60" y="565" fill="#818cf8" font-size="10" font-weight="600">COMPONENTS &amp; UTILITIES (src/components/ | src/utils/)</text>
+
+  <g class="node-clickable" onclick="showInfo('layout')">
+    <rect x="55" y="575" width="130" height="44" rx="8" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.5"/>
+    <text x="120" y="593" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">DashboardLayout.jsx</text>
+    <text x="120" y="606" text-anchor="middle" fill="#a5b4fc" font-size="8">Sidebar nav · Notif bell · Theme toggle</text>
+    <text x="120" y="617" text-anchor="middle" fill="#64748b" font-size="8">Logout → clears localStorage</text>
+  </g>
+
+  <g class="node-clickable" onclick="showInfo('livemap')">
+    <rect x="200" y="575" width="120" height="44" rx="8" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.5"/>
+    <text x="260" y="593" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">LiveMap.jsx</text>
+    <text x="260" y="606" text-anchor="middle" fill="#a5b4fc" font-size="8">react-leaflet · CARTO tiles</text>
+    <text x="260" y="617" text-anchor="middle" fill="#64748b" font-size="8">Simulated route animation</text>
+  </g>
+
+  <g class="node-clickable" onclick="showInfo('protected')">
+    <rect x="335" y="575" width="110" height="44" rx="8" fill="#1e1b4b" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="390" y="593" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">ProtectedRoute.jsx</text>
+    <text x="390" y="606" text-anchor="middle" fill="#fca5a5" font-size="8">Checks localStorage token</text>
+    <text x="390" y="617" text-anchor="middle" fill="#ef4444" font-size="9">⚠ No JWT verify!</text>
+  </g>
+
+  <g class="node-clickable" onclick="showInfo('api')">
+    <rect x="460" y="575" width="75" height="44" rx="8" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.5"/>
+    <text x="497" y="593" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">api.js</text>
+    <text x="497" y="606" text-anchor="middle" fill="#a5b4fc" font-size="8">API_BASE_URL</text>
+    <text x="497" y="617" text-anchor="middle" fill="#64748b" font-size="8">VITE_API_URL env</text>
+  </g>
+
+  <!-- i18n -->
+  <g class="node-clickable" onclick="showInfo('i18n')">
+    <rect x="55" y="635" width="100" height="38" rx="8" fill="#1e1b4b" stroke="#334155" stroke-width="1"/>
+    <text x="105" y="650" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">i18n.js</text>
+    <text x="105" y="664" text-anchor="middle" fill="#64748b" font-size="8">EN / HI / ES translations</text>
+  </g>
+
+  <!-- =================== BACKEND LAYER =================== -->
+  <rect x="660" y="20" width="350" height="520" rx="16" fill="rgba(5,150,105,0.08)" stroke="#065f46" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="680" y="50" fill="#6ee7b7" font-size="11" font-weight="600" letter-spacing="1">BACKEND LAYER (Node.js v24 + Express 5 + ESM)</text>
+
+  <!-- Server.js -->
+  <g class="node-clickable" onclick="showInfo('server')">
+    <rect x="695" y="65" width="280" height="60" rx="10" fill="url(#backendGrad)" filter="url(#glow)"/>
+    <text x="835" y="86" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">server.js — Express App</text>
+    <text x="835" y="100" text-anchor="middle" fill="#d1fae5" font-size="9">CORS · JSON middleware · dotenv · PORT 5000</text>
+    <text x="835" y="112" text-anchor="middle" fill="#a7f3d0" font-size="9">Allowed origins: localhost + smarthealth-management.vercel.app</text>
+  </g>
+
+  <!-- Middleware -->
+  <g class="node-clickable" onclick="showInfo('middleware')">
+    <rect x="695" y="155" width="130" height="50" rx="8" fill="#1e3a2f" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="760" y="175" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">authmiddleware.js</text>
+    <text x="760" y="188" text-anchor="middle" fill="#fca5a5" font-size="8">JWT verify · Bearer token</text>
+    <text x="760" y="200" text-anchor="middle" fill="#ef4444" font-size="9">⚠ NOT used on any route!</text>
+  </g>
+
+  <!-- Routes -->
+  <rect x="840" y="145" width="190" height="240" rx="10" fill="rgba(16,185,129,0.05)" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="860" y="165" fill="#6ee7b7" font-size="10" font-weight="600">API ROUTES (all public)</text>
+
+  <g class="node-clickable" onclick="showInfo('route-register')">
+    <rect x="852" y="175" width="165" height="32" rx="6" fill="#1e3a2f" stroke="#10b981" stroke-width="1"/>
+    <text x="934" y="189" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">POST /register</text>
+    <text x="934" y="201" text-anchor="middle" fill="#6ee7b7" font-size="8">bcrypt hash → User.save()</text>
+  </g>
+  <g class="node-clickable" onclick="showInfo('route-login')">
+    <rect x="852" y="215" width="165" height="32" rx="6" fill="#1e3a2f" stroke="#10b981" stroke-width="1"/>
+    <text x="934" y="229" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">POST /login</text>
+    <text x="934" y="241" text-anchor="middle" fill="#6ee7b7" font-size="8">bcrypt.compare → JWT sign 1d</text>
+  </g>
+  <g class="node-clickable" onclick="showInfo('route-patients')">
+    <rect x="852" y="255" width="165" height="32" rx="6" fill="#1e3a2f" stroke="#10b981" stroke-width="1"/>
+    <text x="934" y="269" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">GET · POST /patients</text>
+    <text x="934" y="281" text-anchor="middle" fill="#6ee7b7" font-size="8">Patient.find() · Patient.save()</text>
+  </g>
+  <g class="node-clickable" onclick="showInfo('route-patient-id')">
+    <rect x="852" y="295" width="165" height="32" rx="6" fill="#1e3a2f" stroke="#10b981" stroke-width="1"/>
+    <text x="934" y="309" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">PUT · DELETE /patients/:id</text>
+    <text x="934" y="321" text-anchor="middle" fill="#6ee7b7" font-size="8">findByIdAndUpdate · Delete</text>
+  </g>
+  <g class="node-clickable" onclick="showInfo('route-ambulance')">
+    <rect x="852" y="335" width="165" height="32" rx="6" fill="#1e3a2f" stroke="#f59e0b" stroke-width="1"/>
+    <text x="934" y="349" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">GET /ambulance-location</text>
+    <text x="934" y="361" text-anchor="middle" fill="#fcd34d" font-size="8">Math.sin/cos simulation only</text>
+  </g>
+
+  <!-- Models -->
+  <rect x="695" y="235" width="130" height="180" rx="10" fill="rgba(139,92,246,0.05)" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="760" y="255" text-anchor="middle" fill="#c4b5fd" font-size="10" font-weight="600">MODELS</text>
+  <g class="node-clickable" onclick="showInfo('model-user')">
+    <rect x="705" y="262" width="110" height="36" rx="6" fill="#2e1065" stroke="#8b5cf6" stroke-width="1"/>
+    <text x="760" y="277" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">User.js</text>
+    <text x="760" y="290" text-anchor="middle" fill="#c4b5fd" font-size="8">name · email · password · role</text>
+  </g>
+  <g class="node-clickable" onclick="showInfo('model-patient')">
+    <rect x="705" y="306" width="110" height="36" rx="6" fill="#2e1065" stroke="#8b5cf6" stroke-width="1"/>
+    <text x="760" y="321" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">Patient.js</text>
+    <text x="760" y="334" text-anchor="middle" fill="#c4b5fd" font-size="8">name·age·disease·bed·status</text>
+  </g>
+  <g class="node-clickable" onclick="showInfo('model-ambulance')">
+    <rect x="705" y="350" width="110" height="36" rx="6" fill="#2e1065" stroke="#8b5cf6" stroke-width="1"/>
+    <text x="760" y="365" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">Ambulance.js</text>
+    <text x="760" y="378" text-anchor="middle" fill="#c4b5fd" font-size="8">id·driver·phone·status·lat·lng</text>
+  </g>
+
+  <!-- =================== DATABASE LAYER =================== -->
+  <rect x="660" y="560" width="350" height="180" rx="16" fill="rgba(139,92,246,0.08)" stroke="#4c1d95" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="680" y="590" fill="#c4b5fd" font-size="11" font-weight="600" letter-spacing="1">DATABASE LAYER (MongoDB Atlas / Local)</text>
+
+  <g class="node-clickable" onclick="showInfo('mongodb')">
+    <rect x="695" y="600" width="300" height="60" rx="10" fill="url(#dbGrad)" filter="url(#glow)"/>
+    <text x="845" y="622" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">MongoDB — "Medicare" database</text>
+    <text x="845" y="638" text-anchor="middle" fill="#e9d5ff" font-size="9">Collections: users · patients · ambulances</text>
+    <text x="845" y="651" text-anchor="middle" fill="#c4b5fd" font-size="9">Mongoose 9 ODM · Atlas Cloud or localhost:27017</text>
+  </g>
+
+  <!-- Deployment -->
+  <rect x="695" y="675" width="300" height="48" rx="8" fill="rgba(239,68,68,0.08)" stroke="#7f1d1d" stroke-width="1"/>
+  <text x="845" y="695" text-anchor="middle" fill="#fca5a5" font-size="10" font-weight="600">Deployment</text>
+  <text x="845" y="712" text-anchor="middle" fill="#94a3b8" font-size="9">Frontend: Vercel (smarthealth-management.vercel.app)  ·  Backend: Render (render.yaml)</text>
+
+  <!-- =================== CONNECTIONS =================== -->
+  <!-- main → app -->
+  <line x1="275" y1="115" x2="275" y2="155" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+
+  <!-- App → Pages (grouped) -->
+  <line x1="275" y1="205" x2="275" y2="270" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-blue)"/>
+
+  <!-- Context connects app -->
+  <line x1="160" y1="200" x2="185" y2="185" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+  <!-- Login → server (HTTP) -->
+  <path d="M 170 322 C 400 322 570 290 660 200" stroke="#3b82f6" stroke-width="2" fill="none" stroke-dasharray="6,3" marker-end="url(#arrow-blue)"/>
+  <text x="430" y="295" fill="#60a5fa" font-size="9" font-weight="600">POST /login · JWT response</text>
+
+  <!-- Patients → server (HTTP) -->
+  <path d="M 170 380 C 420 380 570 350 660 220" stroke="#10b981" stroke-width="2" fill="none" stroke-dasharray="6,3" marker-end="url(#arrow-green)"/>
+  <text x="415" y="355" fill="#34d399" font-size="9" font-weight="600">GET/POST/DELETE /patients</text>
+
+  <!-- LiveMap → ambulance-location -->
+  <path d="M 320 597 C 480 570 590 450 660 300" stroke="#f59e0b" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+  <text x="490" y="495" fill="#fbbf24" font-size="9">GET /ambulance-location (poll 5s)</text>
+
+  <!-- Server → Models -->
+  <line x1="760" y1="205" x2="760" y2="235" stroke="#10b981" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+
+  <!-- Models → MongoDB -->
+  <line x1="760" y1="415" x2="760" y2="600" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Routes → Models (internal) -->
+  <line x1="852" y1="280" x2="830" y2="310" stroke="#10b981" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arrow-green)"/>
+
+  <!-- ProtectedRoute note -->
+  <line x1="445" y1="597" x2="275" y2="270" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arrow-red)"/>
+  <text x="350" y="440" fill="#f87171" font-size="9">Guards routes but only checks token existence</text>
+
+  <!-- Deployment note label -->
+  <rect x="20" y="720" width="550" height="32" rx="8" fill="rgba(59,130,246,0.05)" stroke="#1e3a8a" stroke-width="1"/>
+  <text x="295" y="738" text-anchor="middle" fill="#94a3b8" font-size="9">Deployment: Vercel (frontend) ·  Render (backend, render.yaml)  ·  MongoDB Atlas (cloud DB)</text>
+</svg>
+</div>
+
+<!-- Info Panel -->
+<div class="info-panel" id="infoPanel">
+  <button class="close-btn" onclick="closeInfo()">✕</button>
+  <h2 id="infoTitle">Node Info</h2>
+  <div id="infoBody"></div>
+</div>
+
+<script>
+const INFO = {
+  main: { title:"main.jsx — Entry Point", body:`<p>The <code>createRoot</code> React 18 entry that mounts the entire app.</p><p><strong>Wraps:</strong> BrowserRouter → ThemeProvider → NotificationProvider → App</p><p><strong>Also imports:</strong> <code>leaflet/dist/leaflet.css</code>, <code>utils/leafletFix</code>, <code>i18n.js</code></p><p class="tag frontend">Frontend</p><p class="tag">React 18</p>` },
+  app: { title:"App.jsx — Router", body:`<p>Defines all React Router v6 routes. Dashboard routes wrapped in <code>&lt;ProtectedRoute&gt;</code>. Public routes: /login, /register, /patients/:id.</p><p>Uses <code>QueryClientProvider</code> for TanStack Query (not heavily used yet).</p><p class="tag frontend">Frontend</p>` },
+  theme: { title:"ThemeContext.jsx", body:`<p>Manages dark/light/system theme. Persists to <code>localStorage</code> under key <code>medicare_theme</code>. Toggles <code>dark</code> class on <code>document.documentElement</code>.</p><p class="tag">localStorage</p>` },
+  notif: { title:"NotificationContext.jsx", body:`<p>In-memory notification system. Starts with 3 seeded notifications. Provides: <code>push(type, title, msg)</code>, <code>markRead(id)</code>, <code>markAllRead()</code>, <code>clearAll()</code>. <strong>Not persisted to DB.</strong></p><p class="tag">In-memory only</p>` },
+  login: { title:"LoginPage.jsx — Auth", body:`<p>Has two login paths:</p><ol style="font-size:.82rem;color:#94a3b8;padding-left:16px;line-height:2"><li><strong>Real login:</strong> POST to /login → receives JWT → stores in localStorage</li><li><strong>Demo fallback:</strong> if backend is unreachable or returns error, matches hardcoded demoAccounts and logs in without a token</li></ol><p>⚠️ Demo fallback creates a fake <code>demo-jwt-token-{timestamp}</code> string as token — not a real JWT.</p><p class="tag frontend">Frontend</p><p class="tag" style="background:rgba(239,68,68,.15);color:#f87171">Security Gap</p>` },
+  register: { title:"RegisterPage.jsx", body:`<p>Sends POST /register with {name, email, password, role}. 4 roles: Admin, Doctor, Nurse, Receptionist. On success, navigates to /login. No demo fallback — truly server-dependent.</p><p class="tag backend">Backend Connected</p>` },
+  patients: { title:"PatientManagementPage.jsx", body:`<p>Fetches patients via GET /patients on mount. If response is empty or fails → uses <code>fallbackPatients</code> (6 hardcoded demo records).</p><p>Add: POST /patients (name, age, disease, bed only — not gender/doctor/department)</p><p>⚠️ Schema mismatch: frontend sends gender, department, doctor, contactNumber but backend model only stores name, age, disease, bed, status.</p><p>Delete: calls DELETE /patients/:id but then always removes from local state regardless of server response.</p><p class="tag backend">Backend Connected</p><p class="tag" style="background:rgba(239,68,68,.15);color:#f87171">Schema Mismatch</p>` },
+  ambulance: { title:"AmbulancePage.jsx", body:`<p>Completely frontend-only CRUD. 6 hardcoded ambulance records in <code>initialAmbulances</code> state. No backend calls. The LiveMap.jsx polls /ambulance-location (returns simulated sin/cos coordinates) but the AmbulancePage fleet table is local state only.</p><p class="tag" style="background:rgba(245,158,11,.15);color:#fbbf24">Frontend-only</p>` },
+  dashboard: { title:"DashboardPage.jsx", body:`<p>Fully hardcoded mock data. monthlyData, departmentOccupancy, staffOnDuty, upcomingSurgeries — all static arrays. Recharts AreaChart renders monthly patient trends. "Refresh" button waits 700ms then shows notification — no actual API call.</p><p class="tag">Mock Only</p>` },
+  analytics: { title:"AnalyticsPage.jsx", body:`<p>100% mock data: revenueData, departmentPerformance, patientDemographics. Recharts Area, Bar, and Pie charts. CSV export via downloadHelper.js. No backend connection.</p><p class="tag">Mock Only</p>` },
+  layout: { title:"DashboardLayout.jsx", body:`<p>Main sidebar + header shell. Contains nav links to all 11 sections. Logout clears localStorage (token, role, user) and redirects to /login. Shows logged-in user name from localStorage. Notification bell from NotificationContext. Theme + language toggles.</p><p class="tag frontend">Frontend</p>` },
+  livemap: { title:"LiveMap.jsx", body:`<p>Uses react-leaflet v4 with CARTO dark tiles. Animates ambulance along a hardcoded ROUTE_PATH using requestAnimationFrame + lerp interpolation over 60 seconds. Polls /ambulance-location every 5s to check if backend is reachable (updates LIVE/OFFLINE indicator) but <strong>does NOT use the backend coordinates</strong> — local animation continues regardless.</p><p class="tag" style="background:rgba(245,158,11,.15);color:#fbbf24">Simulated GPS</p>` },
+  protected: { title:"ProtectedRoute.jsx — ⚠️ Security Gap", body:`<p>Only checks if <code>localStorage.getItem('token')</code> is truthy. Any non-empty string passes. This means the demo fallback token (<code>demo-jwt-token-...</code>) grants full access. No JWT signature verification on the frontend. Backend JWT verification exists in authmiddleware.js but is <strong>not applied to any route.</strong></p><p class="tag" style="background:rgba(239,68,68,.15);color:#f87171">Critical Gap</p>` },
+  api: { title:"utils/api.js", body:`<p>Exports <code>API_BASE_URL</code>: reads <code>import.meta.env.VITE_API_URL</code> or falls back to <code>http://localhost:5000</code>. Used by LoginPage, RegisterPage, PatientManagementPage, LiveMap. All fetch calls use native fetch() — no Axios.</p><p class="tag frontend">Frontend</p>` },
+  i18n: { title:"i18n.js", body:`<p>Multilingual support using i18next + react-i18next. Contains full translations for English (EN), Hindi (HI), and Spanish (ES) inline. 300+ keys covering all UI text. Language preference not explicitly persisted in current code.</p><p class="tag">i18next</p>` },
+  server: { title:"server.js — Express Backend", body:`<p>Single file, no controllers or separate routers. Uses ES Modules (<code>type: module</code>). CORS allows multiple origins including Vercel URL. Auto-corrects MongoDB database name casing (medicare → Medicare). All routes defined inline. JWT_SECRET fallback: <code>supersecretkey123</code> if env not set.</p><p class="tag backend">Backend</p>` },
+  middleware: { title:"authmiddleware.js — ⚠️ Not Applied", body:`<p>Correctly verifies Bearer JWT tokens. Decodes payload into req.user. <strong>However, it is imported by nothing.</strong> No route in server.js uses it. All 7 endpoints are completely public.</p><p class="tag" style="background:rgba(239,68,68,.15);color:#f87171">Unused — All Routes Unprotected</p>` },
+  'route-register': { title:"POST /register", body:`<p>Validates: name, email, password, role all required. Checks duplicate email. Hashes password with bcrypt (10 rounds). Saves User. Returns 201 on success.</p><p class="tag backend">Backend</p>` },
+  'route-login': { title:"POST /login", body:`<p>Looks up user by email (lowercase). bcrypt.compare password. Optional role check. Signs JWT with id+role, expires 1 day. Returns token + user object (id, name, email, role). Error messages are intentionally vague for security.</p><p class="tag backend">Backend</p>` },
+  'route-patients': { title:"GET/POST /patients", body:`<p>GET: Patient.find().sort({createdAt:-1}). No auth required.<br/>POST: Requires name, age, disease, bed. Sets status='Admitted'. Does NOT accept gender, department, doctor, contactNumber (frontend sends these, backend ignores them).</p><p class="tag backend">Backend</p><p class="tag" style="background:rgba(239,68,68,.15);color:#f87171">Schema Mismatch</p>` },
+  'route-patient-id': { title:"PUT/DELETE /patients/:id", body:`<p>PUT: Only accepts status ('Admitted' or 'Discharged'). Strict enum validation. Uses findByIdAndUpdate with runValidators.<br/>DELETE: findByIdAndDelete. Both return 404 if not found. No auth required.</p><p class="tag backend">Backend</p>` },
+  'route-ambulance': { title:"GET /ambulance-location — Simulated", body:`<p>Returns JSON with lat/lng computed as: <code>28.6139 + 0.005 * Math.sin(Date.now()/5000)</code>. This is a circular sinusoidal simulation, NOT real GPS. The Ambulance.js model (with real lat/lng fields) exists but is never queried by any route.</p><p class="tag" style="background:rgba(245,158,11,.15);color:#fbbf24">Simulated — Not real GPS</p>` },
+  'model-user': { title:"User.js Model", body:`<p>Fields: name(String,req), role(String,req,enum:[Admin,Doctor,Nurse,Receptionist]), email(String,req,unique), password(String,req). Has timestamps. No index beyond unique email.</p><p class="tag db">MongoDB</p>` },
+  'model-patient': { title:"Patient.js Model", body:`<p>Fields: name(String,req), age(Number,req), disease(String,req), bed(String,req), status(enum:[Admitted,Discharged],default:Admitted). Has timestamps. <strong>Missing: gender, department, doctor, contactNumber</strong> — these are in the frontend form but not in the schema.</p><p class="tag db">MongoDB</p><p class="tag" style="background:rgba(239,68,68,.15);color:#f87171">Schema Mismatch</p>` },
+  'model-ambulance': { title:"Ambulance.js Model", body:`<p>Fields: ambulanceId(String,req,unique), driver, phone, location, status(enum:[Available,On Duty,Maintenance]), lat(Number,req), lng(Number,req). Has timestamps. <strong>This model is never queried by any backend route.</strong> Only /ambulance-location uses math simulation.</p><p class="tag db">MongoDB</p><p class="tag" style="background:rgba(239,68,68,.15);color:#f87171">Model Unused</p>` },
+  mongodb: { title:"MongoDB Database", body:`<p>Database name: <code>Medicare</code> (capital M — auto-corrected in server.js). 3 collections: users, patients, ambulances. Ambulances collection is populated only via seed.js if run. Mongoose 9.2.1 ODM. Connection URI from env var MONGO_URI or fallback to localhost:27017.</p><p class="tag db">MongoDB</p>` },
+  'other-pages': { title:"Other Pages (Frontend-only)", body:`<p>All of these use 100% hardcoded/mock data with no backend connections:</p><ul style="font-size:.82rem;color:#94a3b8;padding-left:16px;line-height:1.8"><li>BedManagementPage — local state array of beds</li><li>EmergencyPage — hardcoded emergency cases</li><li>HospitalFinderPage — static hospital list</li><li>AppointmentBookingPage — local state appointments</li><li>BloodBankPage — static blood inventory</li><li>PharmacyPage — local state pharmacy records</li><li>SettingsPage — localStorage theme/lang prefs</li></ul><p class="tag">Mock Only</p>` }
+};
+
+function showInfo(id) {
+  const d = INFO[id];
+  if(!d) return;
+  document.getElementById('infoTitle').textContent = d.title;
+  document.getElementById('infoBody').innerHTML = d.body;
+  document.getElementById('infoPanel').classList.add('open');
+}
+function closeInfo() { document.getElementById('infoPanel').classList.remove('open'); }
+function setView(v) {
+  document.querySelectorAll('.btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+function highlight(layer) {
+  document.querySelectorAll('.btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+function resetView() {
+  document.querySelectorAll('.btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.btn')[0].classList.add('active');
+}
+</script>
+</body>
+</html>

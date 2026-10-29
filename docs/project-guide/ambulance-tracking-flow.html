@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Ambulance Tracking Flow — CareFlow HMS</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+  header{background:linear-gradient(135deg,#92400e,#f59e0b);padding:18px 32px;display:flex;align-items:center;gap:12px}
+  header h1{font-size:1.3rem;font-weight:800;color:#fff}
+  .canvas{padding:28px;overflow:auto}
+  svg{display:block}
+  .clickable{cursor:pointer}
+  .clickable:hover rect,.clickable:hover circle{filter:brightness(1.2)}
+  .info-panel{position:fixed;right:0;top:0;bottom:0;width:310px;background:#1e293b;border-left:1px solid #334155;padding:20px;transform:translateX(100%);transition:transform .3s;overflow-y:auto;z-index:100}
+  .info-panel.open{transform:translateX(0)}
+  .ip-title{font-size:.95rem;font-weight:700;color:#f1f5f9;margin-bottom:8px}
+  .ip-body{font-size:.8rem;color:#94a3b8;line-height:1.7}
+  .ip-body code{background:#0f172a;padding:1px 5px;border-radius:3px;color:#7dd3fc}
+  .warn{display:inline-block;padding:3px 8px;border-radius:6px;background:rgba(239,68,68,.15);color:#f87171;font-size:.75rem;font-weight:600;margin:4px 0}
+  .ok{display:inline-block;padding:3px 8px;border-radius:6px;background:rgba(16,185,129,.15);color:#4ade80;font-size:.75rem;font-weight:600;margin:4px 0}
+  .note{display:inline-block;padding:3px 8px;border-radius:6px;background:rgba(245,158,11,.15);color:#fbbf24;font-size:.75rem;font-weight:600;margin:4px 0}
+  .cb{position:absolute;top:12px;right:12px;background:none;border:none;color:#64748b;font-size:1.1rem;cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <span style="font-size:1.8rem">🚑</span>
+  <div>
+    <h1>Ambulance Tracking Flow</h1>
+    <div style="font-size:.78rem;color:#fef3c7;margin-top:2px">Verified from LiveMap.jsx · AmbulancePage.jsx · server.js · Ambulance.js</div>
+  </div>
+  <span style="margin-left:auto;font-size:.75rem;background:rgba(239,68,68,.3);padding:3px 10px;border-radius:12px;border:1px solid rgba(239,68,68,.5)">⚠ SIMULATED GPS</span>
+</header>
+<div class="canvas">
+<svg viewBox="0 0 1100 780" width="100%" style="min-width:900px">
+  <defs>
+    <marker id="ay" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f59e0b"/></marker>
+    <marker id="ab" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#3b82f6"/></marker>
+    <marker id="ag" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#10b981"/></marker>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/></marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="550" y="35" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="800">Ambulance System — Two Separate Layers</text>
+
+  <!-- ======= TOP: LiveMap.jsx Layer ======= -->
+  <rect x="20" y="55" width="1060" height="340" rx="12" fill="rgba(245,158,11,0.05)" stroke="#92400e" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <text x="40" y="80" fill="#fbbf24" font-size="11" font-weight="700">LAYER 1: LiveMap.jsx — Ambulance Map Component (src/components/LiveMap.jsx)</text>
+
+  <!-- RAF Animation -->
+  <g class="clickable" onclick="showInfo('lm1')">
+    <rect x="40" y="100" width="200" height="80" rx="8" fill="#1c1a08" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="140" y="122" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="700">requestAnimationFrame()</text>
+    <text x="140" y="137" text-anchor="middle" fill="#d97706" font-size="9">Animation loop</text>
+    <text x="140" y="150" text-anchor="middle" fill="#d97706" font-size="9">elapsed / TOTAL_DURATION (60s)</text>
+    <text x="140" y="163" text-anchor="middle" fill="#64748b" font-size="8">progress: 0 → 1 over 60 seconds</text>
+    <text x="140" y="175" text-anchor="middle" fill="#64748b" font-size="8">LiveMap.jsx L133–168</text>
+  </g>
+  <line x1="240" y1="140" x2="275" y2="140" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#ay)"/>
+
+  <!-- Route interpolation -->
+  <g class="clickable" onclick="showInfo('lm2')">
+    <rect x="275" y="100" width="200" height="80" rx="8" fill="#1c1a08" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="375" y="122" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="700">Route Interpolation</text>
+    <text x="375" y="137" text-anchor="middle" fill="#d97706" font-size="9">ROUTE_PATH: 5 waypoints</text>
+    <text x="375" y="150" text-anchor="middle" fill="#d97706" font-size="9">Hospital→Segments→Patient</text>
+    <text x="375" y="163" text-anchor="middle" fill="#d97706" font-size="9">lerp(from, to, t)</text>
+    <text x="375" y="175" text-anchor="middle" fill="#64748b" font-size="8">All coordinates hardcoded in code</text>
+  </g>
+  <line x1="475" y1="140" x2="510" y2="140" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#ay)"/>
+
+  <!-- Ambulance position -->
+  <g class="clickable" onclick="showInfo('lm3')">
+    <rect x="510" y="100" width="180" height="80" rx="8" fill="#1c1a08" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="600" y="122" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="700">setAmbPos([lat,lng])</text>
+    <text x="600" y="137" text-anchor="middle" fill="#d97706" font-size="9">React state update</text>
+    <text x="600" y="150" text-anchor="middle" fill="#d97706" font-size="9">ETA countdown (480→0 secs)</text>
+    <text x="600" y="163" text-anchor="middle" fill="#d97706" font-size="9">Ambulance icon updated</text>
+    <text x="600" y="175" text-anchor="middle" fill="#64748b" font-size="8">Runs ~60fps via RAF</text>
+  </g>
+  <line x1="690" y1="140" x2="730" y2="140" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#ay)"/>
+
+  <!-- Leaflet render -->
+  <g class="clickable" onclick="showInfo('lm4')">
+    <rect x="730" y="100" width="200" height="80" rx="8" fill="#1c1a08" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="830" y="122" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="700">Leaflet Map Renders</text>
+    <text x="830" y="137" text-anchor="middle" fill="#d97706" font-size="9">&lt;Marker position={ambPos}/&gt;</text>
+    <text x="830" y="150" text-anchor="middle" fill="#d97706" font-size="9">CARTO dark tiles</text>
+    <text x="830" y="163" text-anchor="middle" fill="#d97706" font-size="9">Hospital, Patient, Ambulance</text>
+    <text x="830" y="175" text-anchor="middle" fill="#64748b" font-size="8">Polyline route trail</text>
+  </g>
+
+  <!-- Polling subsystem -->
+  <rect x="40" y="210" width="880" height="80" rx="8" fill="rgba(59,130,246,0.05)" stroke="#1e3a8a" stroke-width="1"/>
+  <text x="480" y="232" text-anchor="middle" fill="#60a5fa" font-size="10" font-weight="700">Parallel Polling Subsystem (setInterval 5000ms)</text>
+  <text x="480" y="250" text-anchor="middle" fill="#3b82f6" font-size="9">fetch(`${API_BASE_URL}/ambulance-location`) every 5 seconds</text>
+  <text x="480" y="267" text-anchor="middle" fill="#93c5fd" font-size="9">If res.ok → setConnected(true) — shows "LIVE" green badge</text>
+  <text x="480" y="284" text-anchor="middle" fill="#93c5fd" font-size="9">If catch → setConnected(false) — shows "OFFLINE" red badge</text>
+  <rect x="530" y="290" width="340" height="20" rx="4" fill="rgba(239,68,68,.1)" stroke="#7f1d1d"/>
+  <text x="700" y="304" text-anchor="middle" fill="#f87171" font-size="9">⚠️ Ambulance position NOT taken from this poll — only connectivity is checked!</text>
+
+  <!-- Hardcoded coords -->
+  <rect x="40" y="310" width="880" height="75" rx="8" fill="rgba(139,92,246,0.05)" stroke="#4c1d95" stroke-width="1"/>
+  <text x="480" y="332" text-anchor="middle" fill="#c4b5fd" font-size="10" font-weight="700">Hardcoded Positions (LiveMap.jsx L16–18, L101–107)</text>
+  <text x="480" y="350" text-anchor="middle" fill="#a78bfa" font-size="9">HOSPITAL_POS = [28.6139, 77.2090] — New Delhi, India (hardcoded)</text>
+  <text x="480" y="367" text-anchor="middle" fill="#a78bfa" font-size="9">PATIENT_POS = [28.6200, 77.2300] — Fixed location</text>
+  <text x="480" y="382" text-anchor="middle" fill="#a78bfa" font-size="9">ROUTE_PATH = 5 fixed coordinate waypoints between hospital and patient</text>
+
+  <!-- ======= BOTTOM: AmbulancePage.jsx Layer ======= -->
+  <rect x="20" y="415" width="1060" height="230" rx="12" fill="rgba(16,185,129,0.05)" stroke="#065f46" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <text x="40" y="440" fill="#10b981" font-size="11" font-weight="700">LAYER 2: AmbulancePage.jsx — Fleet Management Table (src/pages/AmbulancePage.jsx)</text>
+
+  <g class="clickable" onclick="showInfo('ap1')">
+    <rect x="40" y="455" width="200" height="80" rx="8" fill="#1e3a2f" stroke="#10b981" stroke-width="1.5"/>
+    <text x="140" y="477" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">initialAmbulances[]</text>
+    <text x="140" y="492" text-anchor="middle" fill="#6ee7b7" font-size="9">6 hardcoded fleet records</text>
+    <text x="140" y="505" text-anchor="middle" fill="#6ee7b7" font-size="9">AMB-001 to AMB-006</text>
+    <text x="140" y="518" text-anchor="middle" fill="#6ee7b7" font-size="9">BLS / ALS / ICU types</text>
+    <text x="140" y="530" text-anchor="middle" fill="#64748b" font-size="8">AmbulancePage.jsx L11–18</text>
+  </g>
+
+  <g class="clickable" onclick="showInfo('ap2')">
+    <rect x="280" y="455" width="200" height="80" rx="8" fill="#1e3a2f" stroke="#10b981" stroke-width="1.5"/>
+    <text x="380" y="477" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">useState(initialAmbulances)</text>
+    <text x="380" y="492" text-anchor="middle" fill="#6ee7b7" font-size="9">Local state only</text>
+    <text x="380" y="505" text-anchor="middle" fill="#6ee7b7" font-size="9">No DB fetch, no API calls</text>
+    <text x="380" y="518" text-anchor="middle" fill="#6ee7b7" font-size="9">CRUD: local state mutations</text>
+    <text x="380" y="530" text-anchor="middle" fill="#64748b" font-size="8">Resets on page refresh</text>
+  </g>
+
+  <g class="clickable" onclick="showInfo('ap3')">
+    <rect x="520" y="455" width="200" height="80" rx="8" fill="#1e3a2f" stroke="#10b981" stroke-width="1.5"/>
+    <text x="620" y="477" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">Status Change</text>
+    <text x="620" y="492" text-anchor="middle" fill="#6ee7b7" font-size="9">handleStatusChange(id, status)</text>
+    <text x="620" y="505" text-anchor="middle" fill="#6ee7b7" font-size="9">Available/OnDuty/Maintenance</text>
+    <text x="620" y="518" text-anchor="middle" fill="#6ee7b7" font-size="9">Updates local state array</text>
+    <text x="620" y="530" text-anchor="middle" fill="#64748b" font-size="8">push() to NotifContext</text>
+  </g>
+
+  <g class="clickable" onclick="showInfo('ap4')">
+    <rect x="760" y="455" width="290" height="80" rx="8" fill="#1a0a0a" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="905" y="477" text-anchor="middle" fill="#fca5a5" font-size="10" font-weight="700">⚠️ Ambulance.js Model — NEVER USED</text>
+    <text x="905" y="492" text-anchor="middle" fill="#f87171" font-size="9">Mongoose model defined with lat, lng fields</text>
+    <text x="905" y="505" text-anchor="middle" fill="#f87171" font-size="9">ambulances collection exists in MongoDB</text>
+    <text x="905" y="518" text-anchor="middle" fill="#f87171" font-size="9">seed.js does NOT seed ambulances</text>
+    <text x="905" y="530" text-anchor="middle" fill="#f87171" font-size="9">No route uses Ambulance.find() or Ambulance.save()</text>
+  </g>
+
+  <!-- Separation notice -->
+  <rect x="20" y="660" width="1060" height="60" rx="8" fill="rgba(239,68,68,0.08)" stroke="#7f1d1d"/>
+  <text x="550" y="685" text-anchor="middle" fill="#f87171" font-size="11" font-weight="700">⚠️ LiveMap and AmbulancePage are DISCONNECTED systems</text>
+  <text x="550" y="705" text-anchor="middle" fill="#fca5a5" font-size="9">LiveMap shows animated ambulance (AMB-003) regardless of AmbulancePage fleet state · Backend /ambulance-location returns sinusoidal math only · Ambulance.js model has GPS fields but zero routes use it</text>
+
+  <!-- Server simulation -->
+  <rect x="20" y="730" width="1060" height="42" rx="8" fill="rgba(16,185,129,0.05)" stroke="#065f46"/>
+  <text x="550" y="750" text-anchor="middle" fill="#34d399" font-size="10" font-weight="700">Backend: GET /ambulance-location (server.js L269–276)</text>
+  <text x="550" y="765" text-anchor="middle" fill="#6ee7b7" font-size="9">lat = 28.6139 + 0.005 * Math.sin(Date.now()/5000)  ·  lng = 77.2090 + 0.005 * Math.cos(Date.now()/5000)  ·  This is a sinusoidal circle, not GPS</text>
+</svg>
+</div>
+
+<div class="info-panel" id="infoPanel">
+  <button class="cb" onclick="closeInfo()">✕</button>
+  <div class="ip-title" id="iTitle"></div>
+  <div class="ip-body" id="iBody"></div>
+</div>
+
+<script>
+const INFO={
+  lm1:{title:"requestAnimationFrame Loop",body:`<p>LiveMap.jsx uses <code>requestAnimationFrame</code> to smoothly animate the ambulance marker. Runs ~60fps. Tracks elapsed time to compute progress from 0 to 1 over 60 seconds. Cleaned up with <code>cancelAnimationFrame</code> on unmount.</p><div class="note">⚡ Pure browser animation — no server data used</div>`},
+  lm2:{title:"Route Interpolation (lerp)",body:`<p>5 hardcoded waypoints form ROUTE_PATH. Linear interpolation: <code>lerp(a, b, t) = a + (b-a) * t</code>. Calculates which segment ambulance is on, then interpolates within that segment. Creates smooth movement along path.</p><div class="note">All coordinates are fixed in Delhi, India</div>`},
+  lm3:{title:"Ambulance Position State",body:`<p><code>setAmbPos([lat, lng])</code> updates React state each animation frame. ETA countdown: starts at 480 seconds (8 minutes), decrements proportionally. <code>makeAmbulanceIcon(mins)</code> recreates Leaflet icon with updated ETA display.</p>`},
+  lm4:{title:"Leaflet Map Rendering",body:`<p>Uses <code>react-leaflet v4</code>. MapContainer with CARTO dark tile layer. Three markers: Hospital (blue), Patient (red), Ambulance (amber, moving). Route polyline shown as completed/remaining segments.</p><div class="ok">Visual presentation is impressive</div>`},
+  ap1:{title:"initialAmbulances Array",body:`<p>6 hardcoded ambulance records with: id, driver, phone, status, location, eta, type (BLS/ALS/ICU), fuel (%), lastUpdated. These represent the fleet table UI — not the map.</p><div class="note">AmbulancePage.jsx L11–18</div>`},
+  ap2:{title:"Local State Management",body:`<p>useState initialized with initialAmbulances. No API calls ever made. All CRUD (add, edit, delete, status change) mutate this local array. Data is lost on page refresh. NOT connected to MongoDB Ambulance collection.</p><div class="warn">⚠ All changes lost on refresh</div>`},
+  ap3:{title:"Status Change Logic",body:`<p><code>handleStatusChange(id, newStatus)</code>: finds ambulance by id, updates its status and lastUpdated in local state. Also updates eta: "On Duty" → "10 min", others → "—". Pushes notification to NotificationContext.</p>`},
+  ap4:{title:"Ambulance.js Model — Unused",body:`<p>The Mongoose model has all the right fields (ambulanceId, driver, phone, location, status, lat, lng). But ZERO backend routes use it. No GET /ambulances, no POST /ambulances, nothing. The model exists but is dead code in terms of API access.</p><div class="warn">⚠ Model defined but never queried</div><p>To activate it, you'd need to create routes like GET /ambulances and POST /ambulances that use Ambulance.find() and new Ambulance({...}).save().</p>`}
+};
+function showInfo(id){const d=INFO[id];if(!d)return;document.getElementById('iTitle').textContent=d.title;document.getElementById('iBody').innerHTML=d.body;document.getElementById('infoPanel').classList.add('open');}
+function closeInfo(){document.getElementById('infoPanel').classList.remove('open');}
+</script>
+</body>
+</html>

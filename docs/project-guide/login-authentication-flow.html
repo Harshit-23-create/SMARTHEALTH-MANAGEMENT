@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Login & Authentication Flow — CareFlow HMS</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+  header{background:linear-gradient(135deg,#7c2d12,#dc2626);padding:18px 32px;display:flex;align-items:center;gap:12px}
+  header h1{font-size:1.3rem;font-weight:800;color:#fff}
+  header span{font-size:.75rem;color:#fca5a5;background:rgba(239,68,68,.25);padding:3px 10px;border-radius:20px;border:1px solid rgba(239,68,68,.4)}
+  .legend{display:flex;gap:16px;padding:10px 32px;background:#1e293b;border-bottom:1px solid #334155;font-size:.75rem;flex-wrap:wrap;align-items:center}
+  .li{display:flex;align-items:center;gap:6px;color:#94a3b8}
+  .ld{width:12px;height:4px;border-radius:2px}
+  .canvas{padding:28px;overflow:auto}
+  svg{display:block}
+  .info-panel{position:fixed;right:0;top:0;bottom:0;width:300px;background:#1e293b;border-left:1px solid #334155;padding:20px;transform:translateX(100%);transition:transform .3s;overflow-y:auto;z-index:100}
+  .info-panel.open{transform:translateX(0)}
+  .ip-title{font-size:.95rem;font-weight:700;color:#f1f5f9;margin-bottom:8px}
+  .ip-body{font-size:.8rem;color:#94a3b8;line-height:1.6}
+  .ip-body code{background:#0f172a;padding:1px 5px;border-radius:3px;color:#7dd3fc}
+  .warn{display:inline-block;padding:3px 8px;border-radius:6px;background:rgba(239,68,68,.15);color:#f87171;font-size:.75rem;font-weight:600;margin-top:6px}
+  .ok{display:inline-block;padding:3px 8px;border-radius:6px;background:rgba(34,197,94,.15);color:#4ade80;font-size:.75rem;font-weight:600;margin-top:6px}
+  .cb{position:absolute;top:12px;right:12px;background:none;border:none;color:#64748b;font-size:1.1rem;cursor:pointer}
+  .step-label{cursor:pointer}
+  .step-label:hover rect{filter:brightness(1.25)}
+</style>
+</head>
+<body>
+<header>
+  <svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="rgba(255,255,255,.2)"/><path d="M14 7a4 4 0 0 1 0 8 4 4 0 0 1 0-8zm0 10c4.42 0 8 1.79 8 4v1H6v-1c0-2.21 3.58-4 8-4z" fill="white"/></svg>
+  <div>
+    <h1>Login &amp; Authentication Flow</h1>
+    <div style="font-size:.78rem;color:#fca5a5;margin-top:2px">Verified from LoginPage.jsx · server.js · authmiddleware.js · ProtectedRoute.jsx</div>
+  </div>
+  <span style="margin-left:auto">SECURITY AUDIT</span>
+</header>
+<div class="legend">
+  <div class="li"><div class="ld" style="background:#3b82f6"></div>Happy Path (Real Login)</div>
+  <div class="li"><div class="ld" style="background:#f59e0b;border-top:2px dashed #f59e0b;height:0"></div>Demo Fallback</div>
+  <div class="li"><div class="ld" style="background:#ef4444"></div>Security Gap</div>
+  <div class="li"><div class="ld" style="background:#10b981"></div>Backend Process</div>
+  <div class="li" style="margin-left:auto;font-style:italic">Click any step for details</div>
+</div>
+<div class="canvas">
+<svg viewBox="0 0 1100 700" width="100%" style="min-width:900px">
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#64748b"/></marker>
+    <marker id="ab" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#3b82f6"/></marker>
+    <marker id="ag" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#10b981"/></marker>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/></marker>
+    <marker id="ay" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f59e0b"/></marker>
+  </defs>
+
+  <!-- Column Labels -->
+  <text x="130" y="30" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="700">USER</text>
+  <text x="320" y="30" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="700">LOGIN PAGE</text>
+  <text x="510" y="30" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="700">API LAYER</text>
+  <text x="700" y="30" text-anchor="middle" fill="#34d399" font-size="11" font-weight="700">EXPRESS BACKEND</text>
+  <text x="900" y="30" text-anchor="middle" fill="#c4b5fd" font-size="11" font-weight="700">MONGODB</text>
+
+  <!-- Swimlane dividers -->
+  <line x1="225" y1="15" x2="225" y2="695" stroke="#1e293b" stroke-width="1"/>
+  <line x1="415" y1="15" x2="415" y2="695" stroke="#1e293b" stroke-width="1"/>
+  <line x1="605" y1="15" x2="605" y2="695" stroke="#1e293b" stroke-width="1"/>
+  <line x1="795" y1="15" x2="795" y2="695" stroke="#1e293b" stroke-width="1"/>
+
+  <!-- Step 1: User fills form -->
+  <g class="step-label" onclick="showInfo('s1')">
+    <rect x="40" y="50" width="180" height="52" rx="8" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="130" y="72" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">① Fill Login Form</text>
+    <text x="130" y="86" text-anchor="middle" fill="#93c5fd" font-size="9">Email · Password · Role</text>
+    <text x="130" y="98" text-anchor="middle" fill="#64748b" font-size="8">or click 1-Click Demo Login</text>
+  </g>
+
+  <!-- Step 2: validateForm() -->
+  <line x1="220" y1="76" x2="240" y2="76" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#ab)"/>
+  <g class="step-label" onclick="showInfo('s2')">
+    <rect x="240" y="50" width="160" height="52" rx="8" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="320" y="72" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">② validateForm()</text>
+    <text x="320" y="86" text-anchor="middle" fill="#93c5fd" font-size="9">Check email regex</text>
+    <text x="320" y="98" text-anchor="middle" fill="#93c5fd" font-size="9">Password ≥ 6 chars · Role set</text>
+  </g>
+  <text x="328" y="120" text-anchor="middle" fill="#f87171" font-size="9">FAIL → show field errors</text>
+  <line x1="320" y1="102" x2="320" y2="135" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#ar)"/>
+  <rect x="250" y="135" width="140" height="24" rx="4" fill="rgba(239,68,68,.1)" stroke="#7f1d1d"/>
+  <text x="320" y="151" text-anchor="middle" fill="#f87171" font-size="9">Return early, show errors</text>
+
+  <!-- Step 3: fetch to backend -->
+  <line x1="400" y1="76" x2="425" y2="76" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#ab)"/>
+  <g class="step-label" onclick="showInfo('s3')">
+    <rect x="430" y="50" width="160" height="52" rx="8" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="510" y="68" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">③ fetch()</text>
+    <text x="510" y="81" text-anchor="middle" fill="#93c5fd" font-size="9">POST /login</text>
+    <text x="510" y="93" text-anchor="middle" fill="#93c5fd" font-size="9">{email, password, role}</text>
+    <text x="510" y="105" text-anchor="middle" fill="#64748b" font-size="8">Content-Type: application/json</text>
+  </g>
+
+  <!-- Step 4: Backend receives -->
+  <line x1="590" y1="76" x2="618" y2="76" stroke="#10b981" stroke-width="1.5" marker-end="url(#ag)"/>
+  <g class="step-label" onclick="showInfo('s4')">
+    <rect x="620" y="50" width="160" height="52" rx="8" fill="#1e3a2f" stroke="#10b981" stroke-width="1.5"/>
+    <text x="700" y="72" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">④ POST /login handler</text>
+    <text x="700" y="86" text-anchor="middle" fill="#6ee7b7" font-size="9">Validate email + password present</text>
+    <text x="700" y="98" text-anchor="middle" fill="#6ee7b7" font-size="9">server.js line 98–156</text>
+  </g>
+
+  <!-- Step 5: DB lookup -->
+  <line x1="780" y1="76" x2="808" y2="76" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#a)"/>
+  <g class="step-label" onclick="showInfo('s5')">
+    <rect x="810" y="50" width="180" height="52" rx="8" fill="#2e1065" stroke="#8b5cf6" stroke-width="1.5"/>
+    <text x="900" y="72" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">⑤ User.findOne({email})</text>
+    <text x="900" y="86" text-anchor="middle" fill="#c4b5fd" font-size="9">MongoDB query</text>
+    <text x="900" y="98" text-anchor="middle" fill="#a78bfa" font-size="9">email stored as lowercase</text>
+  </g>
+
+  <!-- Step 6: Not found → error -->
+  <line x1="900" y1="102" x2="900" y2="135" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#ar)"/>
+  <rect x="820" y="135" width="160" height="24" rx="4" fill="rgba(239,68,68,.1)" stroke="#7f1d1d"/>
+  <text x="900" y="151" text-anchor="middle" fill="#f87171" font-size="9">400: "Invalid email or password"</text>
+
+  <!-- Step 6b: bcrypt.compare -->
+  <line x1="900" y1="102" x2="900" y2="180" stroke="#10b981" stroke-width="1.5" marker-end="url(#ag)"/>
+  <g class="step-label" onclick="showInfo('s6')">
+    <rect x="620" y="180" width="160" height="52" rx="8" fill="#1e3a2f" stroke="#10b981" stroke-width="1.5"/>
+    <text x="700" y="200" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">⑥ bcrypt.compare()</text>
+    <text x="700" y="214" text-anchor="middle" fill="#6ee7b7" font-size="9">password vs hashed in DB</text>
+    <text x="700" y="226" text-anchor="middle" fill="#6ee7b7" font-size="9">10 salt rounds</text>
+  </g>
+  <line x1="810" y1="206" x2="780" y2="206" stroke="#10b981" stroke-width="1.5" marker-end="url(#ag)"/>
+  <!-- wrong password -->
+  <line x1="700" y1="232" x2="700" y2="255" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#ar)"/>
+  <rect x="620" y="255" width="160" height="24" rx="4" fill="rgba(239,68,68,.1)" stroke="#7f1d1d"/>
+  <text x="700" y="271" text-anchor="middle" fill="#f87171" font-size="9">400: "Invalid email or password"</text>
+
+  <!-- Step 7: Role check -->
+  <line x1="700" y1="232" x2="700" y2="305" stroke="#10b981" stroke-width="1.5" marker-end="url(#ag)"/>
+  <g class="step-label" onclick="showInfo('s7')">
+    <rect x="620" y="305" width="160" height="44" rx="8" fill="#1e3a2f" stroke="#10b981" stroke-width="1.5"/>
+    <text x="700" y="325" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">⑦ Role check (optional)</text>
+    <text x="700" y="338" text-anchor="middle" fill="#6ee7b7" font-size="9">if role sent → user.role must match</text>
+    <text x="700" y="349" text-anchor="middle" fill="#64748b" font-size="8">400: "Invalid role selected"</text>
+  </g>
+
+  <!-- Step 8: JWT Sign -->
+  <line x1="700" y1="349" x2="700" y2="385" stroke="#10b981" stroke-width="1.5" marker-end="url(#ag)"/>
+  <g class="step-label" onclick="showInfo('s8')">
+    <rect x="620" y="385" width="160" height="52" rx="8" fill="#1e3a2f" stroke="#10b981" stroke-width="1.5"/>
+    <text x="700" y="405" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">⑧ jwt.sign()</text>
+    <text x="700" y="418" text-anchor="middle" fill="#6ee7b7" font-size="9">payload: {id, role}</text>
+    <text x="700" y="430" text-anchor="middle" fill="#6ee7b7" font-size="9">expires: 1 day</text>
+    <text x="700" y="442" text-anchor="middle" fill="#fcd34d" font-size="8">⚠ fallback secret if no env!</text>
+  </g>
+
+  <!-- Step 9: Response -->
+  <line x1="620" y1="411" x2="590" y2="411" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#ab)"/>
+  <g class="step-label" onclick="showInfo('s9')">
+    <rect x="430" y="385" width="160" height="52" rx="8" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="510" y="405" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">⑨ Response received</text>
+    <text x="510" y="418" text-anchor="middle" fill="#93c5fd" font-size="9">{token, user:{id,name,email,role}}</text>
+    <text x="510" y="430" text-anchor="middle" fill="#93c5fd" font-size="9">200 OK</text>
+  </g>
+
+  <!-- Step 10: executeSuccessfulLogin -->
+  <line x1="430" y1="411" x2="400" y2="411" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#ab)"/>
+  <g class="step-label" onclick="showInfo('s10')">
+    <rect x="240" y="385" width="160" height="52" rx="8" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="320" y="405" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">⑩ executeSuccessfulLogin()</text>
+    <text x="320" y="418" text-anchor="middle" fill="#93c5fd" font-size="9">localStorage.setItem('token')</text>
+    <text x="320" y="430" text-anchor="middle" fill="#93c5fd" font-size="9">localStorage.setItem('role','user')</text>
+  </g>
+
+  <!-- Step 11: Navigate to /dashboard -->
+  <line x1="240" y1="411" x2="220" y2="411" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#ab)"/>
+  <g class="step-label" onclick="showInfo('s11')">
+    <rect x="40" y="385" width="180" height="52" rx="8" fill="#1e3a8a" stroke="#10b981" stroke-width="1.5"/>
+    <text x="130" y="405" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">⑪ navigate('/dashboard')</text>
+    <text x="130" y="420" text-anchor="middle" fill="#6ee7b7" font-size="9">ProtectedRoute checks token</text>
+    <text x="130" y="434" text-anchor="middle" fill="#fcd34d" font-size="9">⚠ Only: token truthy check!</text>
+  </g>
+
+  <!-- DEMO FALLBACK PATH -->
+  <rect x="30" y="490" width="1060" height="180" rx="12" fill="rgba(245,158,11,0.05)" stroke="#92400e" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="50" y="515" fill="#fbbf24" font-size="11" font-weight="700">⚡ DEMO FALLBACK PATH (when backend fails or returns error)</text>
+
+  <g class="step-label" onclick="showInfo('demo')">
+    <rect x="50" y="525" width="200" height="52" rx="8" fill="#1c1a08" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="150" y="544" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="700">Backend fails / 4xx error</text>
+    <text x="150" y="558" text-anchor="middle" fill="#d97706" font-size="9">OR handleInstantDemoLogin()</text>
+    <text x="150" y="570" text-anchor="middle" fill="#d97706" font-size="9">called directly</text>
+  </g>
+
+  <line x1="250" y1="551" x2="280" y2="551" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ay)"/>
+  <g class="step-label" onclick="showInfo('demo2')">
+    <rect x="280" y="525" width="200" height="52" rx="8" fill="#1c1a08" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="380" y="544" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="700">demoAccounts.find()</text>
+    <text x="380" y="558" text-anchor="middle" fill="#d97706" font-size="9">email === hardcoded email</text>
+    <text x="380" y="570" text-anchor="middle" fill="#d97706" font-size="9">password === 'password123'</text>
+  </g>
+
+  <line x1="480" y1="551" x2="510" y2="551" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ay)"/>
+  <g class="step-label" onclick="showInfo('demo3')">
+    <rect x="510" y="525" width="220" height="52" rx="8" fill="#1c1a08" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="620" y="542" text-anchor="middle" fill="#fca5a5" font-size="10" font-weight="700">⚠️ executeSuccessfulLogin()</text>
+    <text x="620" y="555" text-anchor="middle" fill="#f87171" font-size="9">token: demo-jwt-token-{Date.now()}</text>
+    <text x="620" y="567" text-anchor="middle" fill="#f87171" font-size="9">Not a real JWT — no signature!</text>
+    <text x="620" y="579" text-anchor="middle" fill="#f87171" font-size="9">Grants full dashboard access</text>
+  </g>
+
+  <line x1="730" y1="551" x2="760" y2="551" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ay)"/>
+  <g class="step-label" onclick="showInfo('demo4')">
+    <rect x="760" y="525" width="280" height="52" rx="8" fill="#1c1a08" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="900" y="543" text-anchor="middle" fill="#fca5a5" font-size="10" font-weight="700">⚠️ Security implications</text>
+    <text x="900" y="557" text-anchor="middle" fill="#f87171" font-size="9">ProtectedRoute only checks token presence</text>
+    <text x="900" y="569" text-anchor="middle" fill="#f87171" font-size="9">Any non-empty string passes the guard</text>
+    <text x="900" y="581" text-anchor="middle" fill="#f87171" font-size="9">authMiddleware never applied to routes</text>
+  </g>
+
+  <!-- Fix suggestions -->
+  <rect x="30" y="680" width="1060" height="16" rx="4" fill="rgba(16,185,129,.05)" stroke="#065f46" stroke-width="1"/>
+  <text x="545" y="692" text-anchor="middle" fill="#34d399" font-size="9">💡 Fix: Apply authMiddleware to patient routes · Validate JWT on ProtectedRoute · Remove demo fallback for production</text>
+</svg>
+</div>
+
+<div class="info-panel" id="infoPanel">
+  <button class="cb" onclick="closeInfo()">✕</button>
+  <div class="ip-title" id="iTitle">Step Info</div>
+  <div class="ip-body" id="iBody"></div>
+</div>
+
+<script>
+const INFO = {
+  s1:{title:"① Fill Login Form",body:`<p>User enters email, password, role via LoginPage.jsx. Also has "1-Click Demo Login" buttons (4 role cards) that call <code>handleInstantDemoLogin(demo)</code> directly.</p><p>Language and theme toggles available here without login.</p><div class="ok">Source: LoginPage.jsx L82–280</div>`},
+  s2:{title:"② validateForm()",body:`<p>Checks: role selected, email matches <code>/\\S+@\\S+\\.\\S+/</code> regex, password ≥ 6 chars. Returns false on any failure and shows per-field error messages. Called before fetch.</p><div class="ok">Source: LoginPage.jsx L109–140</div>`},
+  s3:{title:"③ fetch() → POST /login",body:`<p>Native <code>fetch()</code> call to <code>API_BASE_URL + '/login'</code>. Sends JSON body with email (lowercased+trimmed), password, role. API_BASE_URL comes from <code>import.meta.env.VITE_API_URL</code> or <code>http://localhost:5000</code>.</p>`},
+  s4:{title:"④ POST /login handler — server.js",body:`<p>Validates email and password are present (400 if not). Converts email to lowercase for lookup. Calls <code>User.findOne({email})</code>.</p><div class="ok">Source: server.js L98–156</div>`},
+  s5:{title:"⑤ User.findOne()",body:`<p>Mongoose query against MongoDB <code>users</code> collection. Email compared in lowercase. Returns null if user doesn't exist → 400 error.</p><div class="ok">Source: User.js schema</div>`},
+  s6:{title:"⑥ bcrypt.compare()",body:`<p>Compares submitted plain text password with stored bcrypt hash. bcryptjs library, 10 salt rounds. Returns boolean. If false → 400 error. This is the secure part of auth — properly implemented.</p><div class="ok">Correctly implemented</div>`},
+  s7:{title:"⑦ Optional Role Check",body:`<p>If the request body includes a <code>role</code> field AND user's DB role doesn't match → 400 "Invalid role selected". This is the role validation on server side. If role not sent, skipped entirely.</p>`},
+  s8:{title:"⑧ jwt.sign()",body:`<p>Signs JWT with payload <code>{id: user._id, role: user.role}</code>. Secret: <code>process.env.JWT_SECRET</code> with fallback <code>'supersecretkey123'</code>. Token expires in 1 day. This fallback secret is a security risk in production.</p><div class="warn">⚠ Default fallback secret exposed in code</div>`},
+  s9:{title:"⑨ Response",body:`<p>Returns 200 JSON: <code>{message, token, user: {id, name, email, role}}</code>. Token is the signed JWT. User object contains safe fields only (no password).</p><div class="ok">Properly sanitized response</div>`},
+  s10:{title:"⑩ executeSuccessfulLogin()",body:`<p>Stores in localStorage: <code>token</code> (JWT), <code>role</code> (string), <code>user</code> (JSON). If rememberMe: stores email as <code>rememberedEmail</code>. Then calls <code>navigate('/dashboard')</code>.</p><div class="ok">Source: LoginPage.jsx L142–154</div>`},
+  s11:{title:"⑪ ProtectedRoute check",body:`<p><code>ProtectedRoute.jsx</code> only does: <code>const token = localStorage.getItem('token')</code>. If truthy → renders children. If falsy → redirect to /login. <strong>No JWT signature validation!</strong> Any non-empty string string in localStorage passes this guard.</p><div class="warn">⚠ No cryptographic verification</div>`},
+  demo:{title:"Demo Fallback — Entry",body:`<p>Two triggers: (1) backend returns non-200 response, (2) network error (catch block). In both cases, code checks if email+password match any entry in <code>demoAccounts[]</code> hardcoded in LoginPage.jsx.</p><div class="warn">⚠ Works even when backend is down</div>`},
+  demo2:{title:"Demo Account Match",body:`<p>Hardcoded accounts: admin@medicare.com, doctor@medicare.com, nurse@medicare.com, reception@medicare.com — all with password <code>password123</code>. Credentials are visible in the source code. Anyone reading the JS bundle can find these.</p><div class="warn">⚠ Credentials in client-side bundle</div>`},
+  demo3:{title:"Fake Token Generation",body:`<p>When demo fallback is used: <code>token = \`demo-jwt-token-\${Date.now()}\`</code>. This is NOT a valid JWT (no signature, no header). But ProtectedRoute accepts it because it's a truthy string. A malicious user can enter any string as localStorage.token.</p><div class="warn">⚠ Critical: localStorage.setItem('token', 'anything') grants access</div>`},
+  demo4:{title:"Security Summary",body:`<p><strong>Issues found:</strong></p><ul style="padding-left:14px;line-height:1.8"><li>authMiddleware.js exists but is never applied</li><li>All 7 backend routes are completely unauthenticated</li><li>ProtectedRoute checks token truthy only</li><li>Demo fallback creates fake JWT tokens</li><li>Default JWT secret in code</li></ul><p><strong>To fix:</strong> import authMiddleware in server.js and add to patient routes as middleware parameter.</p>`}
+};
+function showInfo(id){const d=INFO[id];if(!d)return;document.getElementById('iTitle').textContent=d.title;document.getElementById('iBody').innerHTML=d.body;document.getElementById('infoPanel').classList.add('open');}
+function closeInfo(){document.getElementById('infoPanel').classList.remove('open');}
+</script>
+</body>
+</html>
